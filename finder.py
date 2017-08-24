@@ -184,11 +184,10 @@ class ManPagesFinder:
             if info.issym():
                 # TODO: treat symlinks as symlinks, they are extracted as normal files now
                 # (affected packages: openssl)
-                if info.linkname.startswith("/"):
-                    # TODO: t.extractfile() chokes on links to absolute path
-                    # (affected packages: openjade)
-                    logger.warning("Skipping symbolic link {}".format(file))
-                    continue
+                # TODO: t.extractfile() cannot extract broken symlinks, including absolute paths that would normally work
+                # (affected packages: openjade, drbd-utils)
+                logger.warning("Skipping symbolic link {}".format(file))
+                continue
 
             man = t.extractfile(file).read()
             if file.endswith(".gz"):
