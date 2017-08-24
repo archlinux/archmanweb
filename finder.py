@@ -41,6 +41,18 @@ Include = /etc/pacman.d/mirrorlist
 # TODO: skip subdirs with translations
 MANDIR = "usr/share/man/"
 
+def decode(text):
+    CHARSETS = ("utf8", "ascii", "iso-8859-1", "iso-8859-9", "iso-8859-15", "cp1250", "cp1252")
+    for charset in CHARSETS:
+        try:
+            return text.decode(charset)
+        except UnicodeDecodeError:
+            pass
+
+    # fall back to chardet and errors="replace"
+    encoding = chardet.detect(text)["encoding"]
+    return text.decode(encoding, errors="replace")
+
 class ManPagesFinder:
     def __init__(self, tmpdir):
         self.tmpdir = os.path.abspath(os.path.join(tmpdir, "arch-manpages"))
@@ -193,11 +205,7 @@ class ManPagesFinder:
             if file.endswith(".gz"):
                 file = file[:-3]
                 man = gzip.decompress(man)
-            try:
-                man = man.decode("utf-8")
-            except UnicodeDecodeError:
-                encoding = chardet.detect(man)["encoding"]
-                man = man.decode(encoding)
+            man = decode(man)
             yield file, man
         t.close()
 
