@@ -206,6 +206,8 @@ class ManPagesFinder:
                 file = file[:-3]
                 man = gzip.decompress(man)
             man = decode(man)
+            # django complains, the DBMS would drop it anyway
+            man = man.replace("\0", "")
             yield file, man
         t.close()
 
