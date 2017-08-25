@@ -38,7 +38,6 @@ Include = /etc/pacman.d/mirrorlist
 Include = /etc/pacman.d/mirrorlist
 """
 
-# TODO: skip subdirs with translations
 MANDIR = "usr/share/man/"
 
 def decode(text):
@@ -90,6 +89,7 @@ class ManPagesFinder:
                 "timestamp": local_timestamp,
             })
 
+    # TODO: check integrity of the downloaded files
     def _refresh_files_db(self, db):
         for server in db.servers:
             for ext in [".tar.gz", ".tar.xz"]:
