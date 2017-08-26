@@ -259,6 +259,9 @@ if __name__ == "__main__":
     finder = ManPagesFinder("./.cache")
     finder.refresh()
 
+    # TODO: parse this from command line
+    full_update = False
+
     # set of packages for which we'll need to update the man pages
     updated_pkgs = []
 
@@ -279,6 +282,8 @@ if __name__ == "__main__":
                 db_package = result[0]
                 if pyalpm.vercmp(db_package.version, pkg.version) == -1:
                     # db_package.version will be updated later, in the same transaction as the man pages
+                    updated_pkgs.append(pkg)
+                elif full_update is True:
                     updated_pkgs.append(pkg)
 
     # delete old packages from the django database
