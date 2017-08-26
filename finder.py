@@ -230,6 +230,7 @@ class ManPagesFinder:
 
 if __name__ == "__main__":
     # init logging
+    logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     handler = logging.StreamHandler()
     formatter = logging.Formatter("{levelname:8} {message}", style="{")
