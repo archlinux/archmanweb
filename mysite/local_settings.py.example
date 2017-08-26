@@ -18,3 +18,8 @@ ALLOWED_HOSTS = []
 #        'PASSWORD': 'arch_manpages',
 #    }
 #}
+
+
+## Path where static files are collected.
+## Run `./manage.py collectstatic` when deploying updated versions.
+#STATIC_ROOT = "/srv/http/example.com/static/"
