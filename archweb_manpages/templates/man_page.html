@@ -10,7 +10,7 @@
     <p>In other packages:</p>
     <ul>
     {% for info in other_versions %}
-        <li><a href="/{{ man.lang }}/man/{{ info.repo }}/{{ info.pkgname }}/{{ info.manname }}.{{ info.mansection }}.html">{{ info.repo }}/{{ info.pkgname }}: {{ info.manname }}({{ info.mansection }})</a></li>
+        <li><a href="{% url 'index' %}{{ man.lang }}/man/{{ info.repo }}/{{ info.pkgname }}/{{ info.manname }}.{{ info.mansection }}.html">{{ info.repo }}/{{ info.pkgname }}: {{ info.manname }}({{ info.mansection }})</a></li>
     {% endfor %}
     </ul>
 {% endif %}
@@ -19,7 +19,7 @@
     <p>In other languages:</p>
     <ul>
     {% for lang in other_languages %}
-        <li><a href="/{{ lang }}/man/{{ url_path }}{{ man.name }}.{{ man.section }}.html">{{ lang }}</a></li>
+        <li><a href="{% url 'index' %}{{ lang }}/man/{{ url_path }}{{ man.name }}.{{ man.section }}.html">{{ lang }}</a></li>
     {% endfor %}
     </ul>
 {% endif %}
@@ -28,7 +28,7 @@
     <p>In other sections:</p>
     <ul>
     {% for section in other_sections %}
-    <li><a href="/{{ man.lang }}/man/{{ man.name }}.{{ section }}.html">{{ man.name }}({{ section }})</a></li>
+    <li><a href="{% url 'index' %}{{ man.lang }}/man/{{ man.name }}.{{ section }}.html">{{ man.name }}({{ section }})</a></li>
     {% endfor %}
     </ul>
 {% endif %}

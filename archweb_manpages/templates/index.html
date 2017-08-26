@@ -13,24 +13,24 @@ The <code>mandoc</code> tool from the <a href="http://mdocml.bsd.lv/">mandoc too
 <p>
 On this website, you can find:
 <ul>
-    <li>Listings of all man pages sorted <a href="/listing/">alphabetically</a>, <a href="/listing/?sorting=section">by section</a> or <a href="/listing/?sorting=lang">by language</a>.</li>
-    <li>Listings of English man pages sorted <a href="/listing/?lang=en&sorting=alphabetical">alphabetically</a> or <a href="/listing/?lang=en&sorting=section">by section</a> (or similarly for any other language).</li>
-    <li>Listings of man pages in a particular section, e.g. <a href="/listing/?section=1">all pages in section 1</a> or <a href="/listing/?lang=en&section=3">English pages in section 3</a>.</li>
-    <li>Listings of man pages for a particular package, e.g. <a href="/listing/coreutils/">coreutils</a> or <a href="/listing/core/acl/">core/acl</a>.</li>
+    <li>Listings of all man pages sorted <a href="{% url 'listing' %}">alphabetically</a>, <a href="{% url 'listing' %}?sorting=section">by section</a> or <a href="{% url 'listing' %}?sorting=lang">by language</a>.</li>
+    <li>Listings of English man pages sorted <a href="{% url 'listing' %}?lang=en&sorting=alphabetical">alphabetically</a> or <a href="{% url 'listing' %}?lang=en&sorting=section">by section</a> (or similarly for any other language).</li>
+    <li>Listings of man pages in a particular section, e.g. <a href="{% url 'listing' %}?section=1">all pages in section 1</a> or <a href="{% url 'listing' %}?lang=en&section=3">English pages in section 3</a>.</li>
+    <li>Listings of man pages for a particular package, e.g. <a href="{% url 'listing' %}coreutils/">coreutils</a> or <a href="{% url 'listing' %}core/acl/">core/acl</a>.</li>
     <li>And, of course, the content of each man page. There are {{ count_man_pages }} man pages from {{ count_pkgs_with_mans }} packages, another {{ count_pkgs_without_mans }} packages don't contain any indexable man pages.</li>
 </ul>
 </p>
 
 <p>
 Intro pages:
-<a href="/en/man/intro.1.html">intro(1)</a>,
-<a href="/en/man/intro.2.html">intro(2)</a>,
-<a href="/en/man/intro.3.html">intro(3)</a>,
-<a href="/en/man/intro.4.html">intro(4)</a>,
-<a href="/en/man/intro.5.html">intro(5)</a>,
-<a href="/en/man/intro.6.html">intro(6)</a>,
-<a href="/en/man/intro.7.html">intro(7)</a>,
-<a href="/en/man/intro.8.html">intro(8)</a>,
+<a href="{% url 'index' %}en/man/intro.1.html">intro(1)</a>,
+<a href="{% url 'index' %}en/man/intro.2.html">intro(2)</a>,
+<a href="{% url 'index' %}en/man/intro.3.html">intro(3)</a>,
+<a href="{% url 'index' %}en/man/intro.4.html">intro(4)</a>,
+<a href="{% url 'index' %}en/man/intro.5.html">intro(5)</a>,
+<a href="{% url 'index' %}en/man/intro.6.html">intro(6)</a>,
+<a href="{% url 'index' %}en/man/intro.7.html">intro(7)</a>,
+<a href="{% url 'index' %}en/man/intro.8.html">intro(8)</a>,
 </p>
 
 <h1>TODO</h1>
@@ -45,8 +45,8 @@ Intro pages:
     <li>
         problematic pages:
         <ul>
-            <li>HTML converter fails on <a href="/zh_CN/man/[.1.html">[(1)</a> (reference to a <it>file</it></li>
-            <li><a href="/man/man1..html">man1()</a> appears in the by-section list</li>
+            <li>HTML converter fails on <a href="{% url 'index' %}zh_CN/man/[.1.html">[(1)</a> (reference to a <it>file</it></li>
+            <li><a href="{% url 'index' %}en/man/man1..html">man1()</a> appears in the by-section list</li>
         </ul>
     </li>
 </ul>
