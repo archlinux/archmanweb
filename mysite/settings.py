@@ -2,6 +2,7 @@ import os
 
 # defaults
 DEBUG = False
+STATIC_URL = '/arch/static/'
 
 from .local_settings import *
 
@@ -44,9 +45,3 @@ USE_I18N = False
 USE_L10N = False
 
 USE_TZ = True
-
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/1.11/howto/static-files/
-
-STATIC_URL = '/static/'
