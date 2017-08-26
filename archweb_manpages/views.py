@@ -84,6 +84,33 @@ def listing(request, *, repo=None, pkgname=None):
     }
     return render(request, "listing.html", context)
 
+def try_symlink_or_404(request, lang, repo, pkgname, man_name, man_section):
+    if repo is None and pkgname is None:
+        query = SymbolicLink.objects.filter(from_section=man_section, from_name=man_name, lang=lang)
+    elif repo is None:
+        query = SymbolicLink.objects.filter(from_section=man_section, from_name=man_name, lang=lang, package__name=pkgname)
+    else:
+        query = SymbolicLink.objects.filter(from_section=man_section, from_name=man_name, lang=lang, package__name=pkgname, package__repo=repo)
+    # TODO: we're trying to guess the newest version, but lexical ordering is too weak
+    query = query.order_by("-package__version")
+
+    if len(query) > 0:
+        symlink = query[0]
+        url = reverse("index") + symlink.lang + "/man/"
+        if repo:
+            url += repo + "/"
+        if pkgname:
+            url += pkgname + "/"
+        url += "{}.{}.html".format(symlink.to_name, symlink.to_section)
+        return HttpResponseRedirect(url)
+
+    if repo and pkgname:
+        raise Http404("Man page {}({}) not found in package {}/{}.".format(man_name, man_section, repo, pkgname))
+    elif pkgname:
+        raise Http404("Man page {}({}) not found in package {}.".format(man_name, man_section, pkgname))
+    else:
+        raise Http404("Man page {}({}) not found in any package.".format(man_name, man_section))
+
 def man_page(request, lang, path, man_name, man_section):
     # In the future we might support even different architectures and versions
     if path:
@@ -123,10 +150,7 @@ def man_page(request, lang, path, man_name, man_section):
     query = query.order_by("-package__version")
 
     if len(query) == 0:
-        if repo or pkgname:
-            raise Http404("Man page {}({}) not found in package {}.".format(man_name, man_section, path))
-        else:
-            raise Http404("Man page {}({}) not found in any package.".format(man_name, man_section))
+        return try_symlink_or_404(request, lang, repo, pkgname, man_name, man_section)
     else:
         db_man = query[0]
         db_pkg = db_man.package

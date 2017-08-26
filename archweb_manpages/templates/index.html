@@ -18,6 +18,7 @@ On this website, you can find:
     <li>Listings of man pages in a particular section, e.g. <a href="{% url 'listing' %}?section=1">all pages in section 1</a> or <a href="{% url 'listing' %}?lang=en&section=3">English pages in section 3</a>.</li>
     <li>Listings of man pages for a particular package, e.g. <a href="{% url 'listing' %}coreutils/">coreutils</a> or <a href="{% url 'listing' %}core/acl/">core/acl</a>.</li>
     <li>And, of course, the content of each man page. There are {{ count_man_pages }} man pages and {{ count_symlinks }} symbolic links from {{ count_pkgs_with_mans }} packages, another {{ count_pkgs_without_mans }} packages don't contain any indexable man pages.</li>
+    <li>Symbolic links, such as <a href="{% url 'index' %}en/man/bunzip2.1.html">bunzip2(1)</a>, are implemented as HTTP redirects with the 302 status code.</li>
 </ul>
 </p>
 
@@ -37,7 +38,6 @@ Intro pages:
 <p>
 <ul>
     <li>improve page layout and CSS stylesheets</li>
-    <li>represent symlinks in the database</li>
     <li>import testing repositories</li>
     <li>when downloading, ensure that same packages from different repos don't overwrite themselves (though if pacman does not handle it, it should never happen)</li>
     <li>post-processing: create section/chapter anchors for linking (see <a href="https://github.com/Debian/debiman/blob/master/internal/convert/convert.go">Debian's approach</a>)</li>
