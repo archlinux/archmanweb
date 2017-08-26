@@ -5,6 +5,7 @@ import datetime
 import logging
 import tarfile
 import gzip
+from pathlib import PurePath
 
 import requests
 import chardet
@@ -221,33 +222,103 @@ class ManPagesFinder:
                 for file, man in self.get_man_contents(pkg, keep_tarball=keep_tarballs):
                     yield pkg, file, man
 
+    def pkg_exists(self, repo, pkgname):
+        db = [db for db in self.sync_db.get_syncdbs() if db.name == repo][0]
+        if db.get_pkg(pkgname) is not None:
+            return True
+        return False
+
 if __name__ == "__main__":
-    finder = ManPagesFinder("./tmp")
+    # init logging
+    logger.setLevel(logging.INFO)
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter("{levelname:8} {message}", style="{")
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+    # init django
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
+    import django
+    django.setup()
+    from archweb_manpages.models import Package, ManPage
+
+    finder = ManPagesFinder("./.cache")
     finder.refresh()
 
-    pkgname = "openssh"
-    db = [db for db in finder.sync_db.get_syncdbs() if db.get_pkg(pkgname)][0]
+    # set of packages for which we'll need to update the man pages
+    updated_pkgs = []
 
-#    for f in finder.get_man_files(db.name, db.get_pkg(pkgname)):
-#        print(f)
+    # update packages in the django database
+    for db in finder.sync_db.get_syncdbs():
+        for pkg in db.pkgcache:
+            result = Package.objects.filter(repo=db.name, name=pkg.name)
+            assert len(result) in {0, 1}
+            if len(result) == 0:
+                db_package = Package()
+                db_package.repo = db.name
+                db_package.name = pkg.name
+                db_package.version = pkg.version
+                db_package.arch = pkg.arch
+                db_package.save()
+                updated_pkgs.append(pkg)
+            else:
+                db_package = result[0]
+                if pyalpm.vercmp(db_package.version, pkg.version) == -1:
+                    # db_package.version will be updated later, in the same transaction as the man pages
+                    updated_pkgs.append(pkg)
 
-#    man_files = list(finder.get_all_man_files())
-#    print(len(man_files))
+    # delete old packages from the django database
+    for db_package in Package.objects.order_by("repo").order_by("name"):
+        if not finder.pkg_exists(db_package.repo, db_package.name):
+            Package.objects.filter(repo=db_package.repo, name=db_package.name).delete()
 
-#    for f, man in finder.get_man_contents(db.get_pkg(pkgname)):
-#        print(f)
-#        print(man)
-#        input()
+    for pkg in updated_pkgs:
+        db_pkg = Package.objects.filter(repo=pkg.db.name, name=pkg.name)[0]
+        files = set(finder.get_man_files(pkg))
+        if not files:
+            continue
 
-    for pkg, file, man in finder.get_all_man_contents():
-        print(pkg, file)
-#        print(man)
-#        input()
+        # the files above include the .gz suffix, we need to collect even the
+        # versions that enter the database
+        paths = set()
 
-        # conflicting packages might provide different versions of the same manuals
-        man_path = os.path.join("./manuals", pkg.name, os.path.relpath(file, MANDIR))
-        man_dir = os.path.dirname(man_path)
-        os.makedirs(man_dir, exist_ok=True)
-        f = open(man_path, "w")
-        f.write(man)
-        f.close()
+        # insert/update man pages
+        for path, content in finder.get_man_contents(pkg):
+            # extract info from path, check if it makes sense
+            pp = PurePath(path)
+            man_name = pp.stem
+            man_section = pp.suffix[1:]  # strip the dot
+            pp = pp.relative_to(MANDIR)
+            if pp.parts[0].startswith("man"):
+                man_lang = "en"
+            elif len(pp.parts) > 1 and pp.parts[1].startswith("man"):
+                man_lang = pp.parts[0]
+            else:
+                logger.warning("Skipping path with unrecognized structure: {}".format(path))
+                continue
+
+            paths.add(path)
+            result = ManPage.objects.filter(package_id=db_pkg.id, path=path)
+            assert len(result) in {0, 1}
+            if len(result) == 0:
+                db_man = ManPage()
+                db_man.package_id = db_pkg.id
+                db_man.path = path
+                db_man.name = man_name
+                db_man.section = man_section
+                db_man.lang = man_lang
+            else:
+                db_man = result[0]
+            db_man.content = content
+            db_man.html = None
+            # TODO: this might still fail if there are multiple foo.1 in different directories and same language
+            db_man.save()
+
+        # delete man pages whose files no longer exist
+        for db_man in ManPage.objects.filter(package_id=db_pkg.id):
+            if db_man.path not in paths:
+                ManPage.objects.filter(package_id=db_pkg.id, path=db_man.path).delete()
+
+        # update pkg version
+        db_pkg.version = pkg.version
+        db_pkg.save()
