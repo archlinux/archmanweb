@@ -2,7 +2,7 @@
 
 {% if pkg %}
     <p>The package
-    <a href="https://www.archlinux.org/packages/{{ pkg.repo }}/{{ pkg.arch }}/{{ pkg.name }}/">{{ pkg.repo }}/{{ pkg.name }}</a>   
+    <a href="https://www.archlinux.org/packages/{{ pkg.repo }}/{{ pkg.arch }}/{{ pkg.name }}/">{{ pkg.repo }}/{{ pkg.name }}</a>
     contains these man pages:</p>
 {% endif %}
 
@@ -43,4 +43,44 @@
             {% endif %}
         </span>
     </div>
+{% endif %}
+
+{% if pkg and symlinks %}
+    <p>...and these symbolic links:</p>
+    <ul>
+    {% for symlink in symlinks %}
+        <li>
+            <span class="language-tag">[{{ symlink.lang }}]</span>
+            <a href="{% url 'index' %}{{ symlink.lang }}/man/{{ pkg.repo }}/{{ pkg.name }}/{{ symlink.from_name }}.{{ symlink.from_section }}.html">{{ symlink.from_name }}({{ symlink.from_section }})</a>
+            &rarr;
+            <a href="{% url 'index' %}{{ symlink.lang }}/man/{{ symlink.to_name }}.{{ symlink.to_section }}.html">{{ symlink.to_name }}({{ symlink.to_section }})</a>
+        </li>
+    {% endfor %}
+    </ul>
+
+    {% if symlinks.paginator.num_pages != 1 %}
+        <div class="pagination">
+            <span class="page-links">
+                {% if symlinks.number != 1 %}
+                    <a href="?{% query_transform request page_symlinks=1 %}">first</a>
+                {% endif %}
+
+                {% if symlinks.has_previous %}
+                    <a href="?{% query_transform request page_symlinks=symlinks.previous_page_number %}">previous</a>
+                {% endif %}
+
+                <span class="current">
+                    page {{ symlinks.number }} of {{ symlinks.paginator.num_pages }}
+                </span>
+
+                {% if symlinks.has_next %}
+                    <a href="?{% query_transform request page_symlinks=symlinks.next_page_number %}">next</a>
+                {% endif %}
+
+                {% if symlinks.number != symlinks.paginator.num_pages %}
+                    <a href="?{% query_transform request page_symlinks=symlinks.paginator.num_pages %}">last</a>
+                {% endif %}
+            </span>
+        </div>
+    {% endif %}
 {% endif %}
