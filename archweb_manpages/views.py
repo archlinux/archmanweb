@@ -55,6 +55,8 @@ def listing(request, *, repo=None, pkgname=None):
         man_pages = man_pages.filter(package__name=pkgname)
     if lang:
         man_pages = man_pages.filter(lang=lang)
+    if section:
+        man_pages = man_pages.filter(section=section)
 
     paginator = Paginator(man_pages, 500)
     page = request.GET.get("page")
