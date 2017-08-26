@@ -195,21 +195,18 @@ class ManPagesFinder:
         for file in man_files:
             info = t.getmember(file)
             if info.issym():
-                # TODO: treat symlinks as symlinks, they are extracted as normal files now
-                # (affected packages: openssl)
-                # TODO: t.extractfile() cannot extract broken symlinks, including absolute paths that would normally work
-                # (affected packages: openjade, drbd-utils)
-                logger.warning("Skipping symbolic link {}".format(file))
-                continue
-
-            man = t.extractfile(file).read()
-            if file.endswith(".gz"):
-                file = file[:-3]
-                man = gzip.decompress(man)
-            man = decode(man)
-            # django complains, the DBMS would drop it anyway
-            man = man.replace("\0", "")
-            yield file, man
+                if file.endswith(".gz"):
+                    file = file[:-3]
+                yield "symlink", file, info.linkname
+            else:
+                man = t.extractfile(file).read()
+                if file.endswith(".gz"):
+                    file = file[:-3]
+                    man = gzip.decompress(man)
+                man = decode(man)
+                # django complains, the DBMS would drop it anyway
+                man = man.replace("\0", "")
+                yield "file", file, man
         t.close()
 
         # clean up
@@ -219,14 +216,30 @@ class ManPagesFinder:
     def get_all_man_contents(self, *, keep_tarballs=True):
         for db in self.sync_db.get_syncdbs():
             for pkg in db.pkgcache:
-                for file, man in self.get_man_contents(pkg, keep_tarball=keep_tarballs):
-                    yield pkg, file, man
+                for v1, v2, v3 in self.get_man_contents(pkg, keep_tarball=keep_tarballs):
+                    yield pkg, v1, v2, v3
 
     def pkg_exists(self, repo, pkgname):
         db = [db for db in self.sync_db.get_syncdbs() if db.name == repo][0]
         if db.get_pkg(pkgname) is not None:
             return True
         return False
+
+class UnknownManPath(Exception):
+    pass
+
+def parse_man_path(path):
+    pp = PurePath(path)
+    man_name = pp.stem
+    man_section = pp.suffix[1:]  # strip the dot
+    pp = pp.relative_to(MANDIR)
+    if pp.parts[0].startswith("man"):
+        man_lang = "en"
+    elif len(pp.parts) > 1 and pp.parts[1].startswith("man"):
+        man_lang = pp.parts[0]
+    else:
+        raise UnknownManPath
+    return man_name, man_section, man_lang
 
 if __name__ == "__main__":
     # init logging
@@ -241,7 +254,7 @@ if __name__ == "__main__":
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
     import django
     django.setup()
-    from archweb_manpages.models import Package, ManPage
+    from archweb_manpages.models import Package, ManPage, SymbolicLink
 
     finder = ManPagesFinder("./.cache")
     finder.refresh()
@@ -284,36 +297,89 @@ if __name__ == "__main__":
         paths = set()
 
         # insert/update man pages
-        for path, content in finder.get_man_contents(pkg):
-            # extract info from path, check if it makes sense
-            pp = PurePath(path)
-            man_name = pp.stem
-            man_section = pp.suffix[1:]  # strip the dot
-            pp = pp.relative_to(MANDIR)
-            if pp.parts[0].startswith("man"):
-                man_lang = "en"
-            elif len(pp.parts) > 1 and pp.parts[1].startswith("man"):
-                man_lang = pp.parts[0]
-            else:
-                logger.warning("Skipping path with unrecognized structure: {}".format(path))
-                continue
+        for t, v1, v2 in finder.get_man_contents(pkg):
+            if t == "file":
+                path, content = v1, v2
+                # extract info from path, check if it makes sense
+                try:
+                    man_name, man_section, man_lang = parse_man_path(path)
+                except UnknownManPath:
+                    logger.warning("Skipping path with unrecognized structure: {}".format(path))
+                    continue
 
-            paths.add(path)
-            result = ManPage.objects.filter(package_id=db_pkg.id, path=path)
-            assert len(result) in {0, 1}
-            if len(result) == 0:
-                db_man = ManPage()
-                db_man.package_id = db_pkg.id
-                db_man.path = path
-                db_man.name = man_name
-                db_man.section = man_section
-                db_man.lang = man_lang
+                paths.add(path)
+                result = ManPage.objects.filter(package_id=db_pkg.id, path=path)
+                assert len(result) in {0, 1}
+                if len(result) == 0:
+                    db_man = ManPage()
+                    db_man.package_id = db_pkg.id
+                    db_man.path = path
+                    db_man.name = man_name
+                    db_man.section = man_section
+                    db_man.lang = man_lang
+                else:
+                    db_man = result[0]
+                db_man.content = content
+                db_man.html = None
+                # TODO: this might still fail if there are multiple foo.1 in different directories and same language
+                db_man.save()
+
+            elif t == "symlink":
+                source, target = v1, v2
+
+                # extract info from source, check if it makes sense
+                try:
+                    source_name, source_section, source_lang = parse_man_path(source)
+                except UnknownManPath:
+                    logger.warning("Skipping symlink with unrecognized structure: {}".format(source))
+                    continue
+
+                # drop .gz suffix from target
+                if target.endswith(".gz"):
+                    target = target[:-3]
+
+                if target.startswith("/"):
+                    # make target relative to "/"
+                    target = target[1:]
+                else:
+                    # make target full path
+                    ppt = PurePath(source).parent / target
+                    target = str(ppt)
+
+                # extract info from target, check if it makes sense
+                try:
+                    target_name, target_section, target_lang = parse_man_path(target)
+                except UnknownManPath:
+                    logger.warning("Skipping symlink with unknown target: {}".format(target))
+                    continue
+
+                # drop cross-language symlinks
+                if target_lang != source_lang:
+                    logger.warning("Skipping cross-language symlink from {} to {}".format(source, target))
+                    continue
+
+                # drop useless redirects
+                if target_section == source_section and target_name == source_name:
+                    logger.warning("Skipping symlink from {} to {} (the base name is the same).".format(source, target))
+                    continue
+
+                # save into database
+                query = SymbolicLink.objects.filter(package_id=db_pkg.id, lang=source_lang, from_section=source_section, from_name=source_name)
+                assert len(query) in {0, 1}
+                if len(query) == 0:
+                    db_link = SymbolicLink()
+                    db_link.package_id = db_pkg.id
+                    db_link.lang = source_lang
+                    db_link.from_section = source_section
+                    db_link.from_name = source_name
+                else:
+                    db_link = query[0]
+                db_link.to_section = target_section
+                db_link.to_name = target_name
+                db_link.save()
+
             else:
-                db_man = result[0]
-            db_man.content = content
-            db_man.html = None
-            # TODO: this might still fail if there are multiple foo.1 in different directories and same language
-            db_man.save()
+                raise NotImplementedError("Unknown tarball entry type: {}".format(t))
 
         # delete man pages whose files no longer exist
         for db_man in ManPage.objects.filter(package_id=db_pkg.id):
