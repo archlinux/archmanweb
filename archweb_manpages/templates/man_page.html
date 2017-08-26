@@ -1,0 +1,36 @@
+{% load static %}
+
+<link rel="stylesheet" type="text/css" href="{% static 'man_app/style.css' %}" />
+
+<p>Package containing this man page:
+<a href="https://www.archlinux.org/packages/{{ pkg.repo }}/{{ pkg.arch }}/{{ pkg.name }}/">{{ pkg.repo }}/{{ pkg.name }}</a>
+(version {{ pkg.version }})</p>
+
+{% if other_versions %}
+    <p>In other packages:</p>
+    <ul>
+    {% for info in other_versions %}
+        <li><a href="/{{ man.lang }}/man/{{ info.repo }}/{{ info.pkgname }}/{{ info.manname }}.{{ info.mansection }}.html">{{ info.repo }}/{{ info.pkgname }}: {{ info.manname }}({{ info.mansection }})</a></li>
+    {% endfor %}
+    </ul>
+{% endif %}
+
+{% if other_languages %}
+    <p>In other languages:</p>
+    <ul>
+    {% for lang in other_languages %}
+        <li><a href="/{{ lang }}/man/{{ url_path }}{{ man.name }}.{{ man.section }}.html">{{ lang }}</a></li>
+    {% endfor %}
+    </ul>
+{% endif %}
+
+{% if other_sections %}
+    <p>In other sections:</p>
+    <ul>
+    {% for section in other_sections %}
+    <li><a href="/{{ man.lang }}/man/{{ man.name }}.{{ section }}.html">{{ man.name }}({{ section }})</a></li>
+    {% endfor %}
+    </ul>
+{% endif %}
+
+{{ man.html | safe }}

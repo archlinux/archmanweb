@@ -1,0 +1,20 @@
+## See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
+
+DEBUG = False
+
+## Make this unique, and don't share it with anybody.
+SECRET_KEY = '00000000000000000000000000000000000000000000000'
+
+## Must not be empty when DEBUG is False
+ALLOWED_HOSTS = []
+
+
+## PostgreSQL database settings
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.postgresql',
+#        'NAME': 'arch_manpages',
+#        'USER': 'arch_manpages',
+#        'PASSWORD': 'arch_manpages',
+#    }
+#}

@@ -1,0 +1,46 @@
+{% load query_transform %}
+
+{% if pkg %}
+    <p>The package
+    <a href="https://www.archlinux.org/packages/{{ pkg.repo }}/{{ pkg.arch }}/{{ pkg.name }}/">{{ pkg.repo }}/{{ pkg.name }}</a>   
+    contains these man pages:</p>
+{% endif %}
+
+{% if man_pages %}
+    <ul>
+    {% for man in man_pages %}
+        <li>
+            <span class="language-tag">[{{ man.lang }}]</span>
+            <a href="/{{ man.lang }}/man/{{ man.name }}.{{ man.section }}.html">{{ man.name }}({{ man.section }})</a>
+        </li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No man pages in this list.</p>
+{% endif %}
+
+{% if man_pages.paginator.num_pages != 1 %}
+    <div class="pagination">
+        <span class="page-links">
+            {% if man_pages.number != 1 %}
+                <a href="?{% query_transform request page=1 %}">first</a>
+            {% endif %}
+
+            {% if man_pages.has_previous %}
+                <a href="?{% query_transform request page=man_pages.previous_page_number %}">previous</a>
+            {% endif %}
+
+            <span class="current">
+                page {{ man_pages.number }} of {{ man_pages.paginator.num_pages }}
+            </span>
+
+            {% if man_pages.has_next %}
+                <a href="?{% query_transform request page=man_pages.next_page_number %}">next</a>
+            {% endif %}
+
+            {% if man_pages.number != man_pages.paginator.num_pages %}
+                <a href="?{% query_transform request page=man_pages.paginator.num_pages %}">last</a>
+            {% endif %}
+        </span>
+    </div>
+{% endif %}
