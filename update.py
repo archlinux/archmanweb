@@ -23,7 +23,12 @@ def parse_man_path(path):
     pp = PurePath(path)
     man_name = pp.stem
     man_section = pp.suffix[1:]  # strip the dot
+
+    # relative_to can succeed only if path is a subdir of MANDIR
+    if not path.startswith(MANDIR):
+        raise UnknownManPath
     pp = pp.relative_to(MANDIR)
+
     if pp.parts[0].startswith("man"):
         man_lang = "en"
     elif len(pp.parts) > 1 and pp.parts[1].startswith("man"):
