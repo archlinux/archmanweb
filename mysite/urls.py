@@ -17,4 +17,5 @@ from django.conf.urls import include, url
 
 urlpatterns = [
     url(r'^', include('archweb_manpages.urls')),
+    url(r'^arch/manpages/', include('archweb_manpages.urls')),
 ]

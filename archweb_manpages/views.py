@@ -4,6 +4,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Count
+from django.urls import reverse
 
 from .models import Package, ManPage
 
@@ -165,11 +166,13 @@ def man_page(request, lang, path, man_name, man_section):
         other_sections.add(man.section)
 
     # convert the man page to HTML if not already done
-    if db_man.html is None:
-        cmd = "mandoc -T html -O fragment,man=/{lang}/man/%N.%S.html".format(lang=lang)
+    url_pattern = reverse("index") + lang + "/man/%N.%S.html"
+    if db_man.html is None or db_man.html_url_pattern != url_pattern:
+        cmd = "mandoc -T html -O fragment,man={}".format(url_pattern)
         p = subprocess.run(cmd, shell=True, check=True, input=db_man.content, encoding="utf-8", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         assert p.stdout
         db_man.html = p.stdout
+        db_man.url_pattern = url_pattern
         db_man.save()
 
     context = {

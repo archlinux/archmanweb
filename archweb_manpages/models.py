@@ -41,6 +41,9 @@ class ManPage(models.Model):
     # (only the <body>, not the whole page served to users)
     html = models.TextField(blank=True, null=True)
 
+    # URL pattern for crosslinks, which is hardcoded in the HTML version
+    html_url_pattern = models.TextField(default="")
+
     class Meta:
         unique_together = (
             ('package', 'path'),
