@@ -26,14 +26,20 @@ def listing(request, *, repo=None, pkgname=None):
     lang = request.GET.get("lang")
     section = request.GET.get("section")
 
-    if sorting in "alphabetical":
+    if sorting == "alphabetical":
         man_pages = ManPage.objects.order_by("name", "lang", "section")
+    elif sorting == "-alphabetical":
+        man_pages = ManPage.objects.order_by("-name", "-lang", "-section")
     elif sorting == "section":
         man_pages = ManPage.objects.order_by("section", "name", "lang")
+    elif sorting == "-section":
+        man_pages = ManPage.objects.order_by("-section", "-name", "-lang")
     elif sorting == "lang":
         man_pages = ManPage.objects.order_by("lang", "name", "section")
+    elif sorting == "-lang":
+        man_pages = ManPage.objects.order_by("-lang", "-name", "-section")
     else:
-        raise Http404("Unknown sorting parameter: {}".format(sorting))
+        raise HttpResponse("Unknown sorting parameter: {}".format(sorting), status=400)
 
     db_pkg = None
 
