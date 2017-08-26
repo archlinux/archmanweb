@@ -96,12 +96,8 @@ def try_symlink_or_404(request, lang, repo, pkgname, man_name, man_section):
 
     if len(query) > 0:
         symlink = query[0]
-        url = reverse("index") + symlink.lang + "/man/"
-        if repo:
-            url += repo + "/"
-        if pkgname:
-            url += pkgname + "/"
-        url += "{}.{}.html".format(symlink.to_name, symlink.to_section)
+        # repo and pkgname are not added, the target might be in a different package
+        url = reverse("index") + symlink.lang + "/man/{}.{}.html".format(symlink.to_name, symlink.to_section)
         return HttpResponseRedirect(url)
 
     if repo and pkgname:
