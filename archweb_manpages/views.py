@@ -166,13 +166,12 @@ def man_page(request, lang, path, man_name, man_section):
         other_sections.add(man.section)
 
     # convert the man page to HTML if not already done
-    url_pattern = reverse("index") + lang + "/man/%N.%S.html"
-    if db_man.html is None or db_man.html_url_pattern != url_pattern:
+    if db_man.html is None:
+        url_pattern = reverse("index") + lang + "/man/%N.%S.html"
         cmd = "mandoc -T html -O fragment,man={}".format(url_pattern)
         p = subprocess.run(cmd, shell=True, check=True, input=db_man.content, encoding="utf-8", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         assert p.stdout
         db_man.html = p.stdout
-        db_man.url_pattern = url_pattern
         db_man.save()
 
     context = {
