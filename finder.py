@@ -349,7 +349,8 @@ if __name__ == "__main__":
                 else:
                     # make target full path
                     ppt = PurePath(source).parent / target
-                    target = str(ppt)
+                    # normalize to remove any '..'
+                    target = os.path.normpath(ppt)
 
                 # extract info from target, check if it makes sense
                 try:
