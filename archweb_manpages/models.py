@@ -50,9 +50,12 @@ class ManPage(models.Model):
             ('package', 'section', 'name', 'lang'),
         )
         index_together = (
-            ('section', 'name'),
-            # we need both orders for alphabetical and section ordering
+            # we need all orders for the listings' ordering
+            ('name', 'lang', 'section'),
+            ('section', 'name', 'lang'),
             ('lang', 'name', 'section'),
-            ('lang', 'section', 'name'),
+            # for filter in 'links to other sections'
+            ('section', 'name'),
+            # for filter in 'links to other sections'
             ('name', 'lang'),
         )
