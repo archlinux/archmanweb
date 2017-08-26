@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 
 class Package(models.Model):
     id = models.AutoField(primary_key=True)
@@ -13,7 +14,7 @@ class Package(models.Model):
             ('name', 'repo'),
         )
 
-    def __repr__(self):
+    def __str__(self):
         return "<Package: arch={}, repo={}, name={}, version={}>".format(self.arch, self.repo, self.name, self.version)
 
 
@@ -56,3 +57,37 @@ class ManPage(models.Model):
             # for filter in 'links to other sections'
             ('name', 'lang'),
         )
+
+class SymbolicLink(models.Model):
+    # package containing the symlink
+    # NOTE: django emulates ON DELETE, it is not added to the SQL
+    package = models.ForeignKey(Package, on_delete=models.CASCADE)
+
+    # language tag (same for the source and target)
+    lang = models.TextField(default="en")
+
+    # source section number
+    from_section = models.TextField()
+
+    # source man page name
+    from_name = models.TextField()
+
+    # target section number
+    to_section = models.TextField()
+
+    # target man page name
+    to_name = models.TextField()
+
+    class Meta:
+        unique_together = (
+            ('package', 'lang', 'from_section', 'from_name'),
+        )
+
+    def __str__(self):
+        return "<SymbolicLink: package={}, lang={}, from_section={}, from_name={}, to_section={}, to_name>" \
+               .format(self.package, self.lang, self.from_section, self.from_name, self.to_section, self.to_name)
+
+    def clean(self):
+        # either the section or name must be different
+        if self.from_section == self.to_section and self.from_name == self.to_name:
+            raise ValidationError("Symbolic link cannot be to the same name and section.")
