@@ -17,7 +17,7 @@ On this website, you can find:
     <li>Listings of English man pages sorted <a href="{% url 'listing' %}?lang=en&sorting=alphabetical">alphabetically</a> or <a href="{% url 'listing' %}?lang=en&sorting=section">by section</a> (or similarly for any other language).</li>
     <li>Listings of man pages in a particular section, e.g. <a href="{% url 'listing' %}?section=1">all pages in section 1</a> or <a href="{% url 'listing' %}?lang=en&section=3">English pages in section 3</a>.</li>
     <li>Listings of man pages for a particular package, e.g. <a href="{% url 'listing' %}coreutils/">coreutils</a> or <a href="{% url 'listing' %}core/acl/">core/acl</a>.</li>
-    <li>And, of course, the content of each man page. There are {{ count_man_pages }} man pages from {{ count_pkgs_with_mans }} packages, another {{ count_pkgs_without_mans }} packages don't contain any indexable man pages.</li>
+    <li>And, of course, the content of each man page. There are {{ count_man_pages }} man pages and {{ count_symlinks }} symbolic links from {{ count_pkgs_with_mans }} packages, another {{ count_pkgs_without_mans }} packages don't contain any indexable man pages.</li>
 </ul>
 </p>
 
