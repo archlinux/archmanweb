@@ -92,6 +92,10 @@ def update_man_pages(finder, updated_pkgs):
                     logger.warning("Skipping path with unrecognized structure: {}".format(path))
                     continue
 
+                if not man_section:
+                    logger.warning("Skipping path with empty section number: {}".format(path))
+                    continue
+
                 paths.add(path)
                 result = ManPage.objects.filter(package_id=db_pkg.id, path=path)
                 assert len(result) in {0, 1}

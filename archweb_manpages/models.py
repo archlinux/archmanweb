@@ -58,6 +58,14 @@ class ManPage(models.Model):
             ('name', 'lang'),
         )
 
+    def clean(self):
+        if not self.path:
+            raise ValidationError("Path cannot be empty.")
+        if not self.name:
+            raise ValidationError("Man name cannot be empty.")
+        if not self.section:
+            raise ValidationError("Man section cannot be empty.")
+
 class SymbolicLink(models.Model):
     # package containing the symlink
     # NOTE: django emulates ON DELETE, it is not added to the SQL
