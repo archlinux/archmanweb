@@ -1,4 +1,4 @@
 table.head, table.foot { width: 100%; }
 td.head-rtitle, td.foot-os { text-align: right; }
 td.head-vol { text-align: center; }
-dig.Pp { margin: 1ex 0ex; }
+div.Pp { margin: 1ex 0ex; }
