@@ -151,6 +151,8 @@ def man_page(request, lang, path, man_name, man_section):
     else:
         raise Http404("Invalid package path: {}".format(path))
 
+    # this is important because we don't know if the user explicitly specified
+    # the language or followed a link to a localized page, which does not exist
     def fall_back_to_english():
         url = "/en/man/{}{}.{}.html".format(path, man_name, man_section)
         return HttpResponseRedirect(url)
