@@ -54,7 +54,7 @@ class ManPage(models.Model):
             ('lang', 'name', 'section'),
             # for filter in 'links to other sections'
             ('section', 'name'),
-            # for filter in 'links to other sections'
+            # for optional 'section' and for filter in 'links to other sections'
             ('name', 'lang'),
         )
 

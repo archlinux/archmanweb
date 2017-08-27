@@ -18,26 +18,26 @@ On this website, you can find:
     <li>Listings of man pages in a particular section, e.g. <a href="{% url 'listing' %}?section=1">all pages in section 1</a> or <a href="{% url 'listing' %}?lang=en&section=3">English pages in section 3</a>.</li>
     <li>Listings of man pages for a particular package, e.g. <a href="{% url 'listing' %}coreutils/">coreutils</a> or <a href="{% url 'listing' %}core/acl/">core/acl</a>.</li>
     <li>And, of course, the content of each man page. There are {{ count_man_pages }} man pages and {{ count_symlinks }} symbolic links from {{ count_pkgs_with_mans }} packages, another {{ count_pkgs_without_mans }} packages don't contain any indexable man pages.</li>
-    <li>Symbolic links, such as <a href="{% url 'index' %}en/man/bunzip2.1.html">bunzip2(1)</a>, are implemented as HTTP redirects with the 302 status code. Symbolic links are included in per-package listings, such as <a href="{% url 'listing' %}core/openssl/">core/openssl</a>.</li>
+    <li>Symbolic links, such as <a href="{% url 'index' %}man/bunzip2.1">bunzip2(1)</a>, are implemented as HTTP redirects with the 302 status code. Symbolic links are included in per-package listings, such as <a href="{% url 'listing' %}core/openssl/">core/openssl</a>.</li>
 </ul>
 </p>
 
 <p>
 Intro pages:
-<a href="{% url 'index' %}en/man/intro.1.html">intro(1)</a>,
-<a href="{% url 'index' %}en/man/intro.2.html">intro(2)</a>,
-<a href="{% url 'index' %}en/man/intro.3.html">intro(3)</a>,
-<a href="{% url 'index' %}en/man/intro.4.html">intro(4)</a>,
-<a href="{% url 'index' %}en/man/intro.5.html">intro(5)</a>,
-<a href="{% url 'index' %}en/man/intro.6.html">intro(6)</a>,
-<a href="{% url 'index' %}en/man/intro.7.html">intro(7)</a>,
-<a href="{% url 'index' %}en/man/intro.8.html">intro(8)</a>,
+<a href="{% url 'index' %}man/intro.1">intro(1)</a>,
+<a href="{% url 'index' %}man/intro.2">intro(2)</a>,
+<a href="{% url 'index' %}man/intro.3">intro(3)</a>,
+<a href="{% url 'index' %}man/intro.4">intro(4)</a>,
+<a href="{% url 'index' %}man/intro.5">intro(5)</a>,
+<a href="{% url 'index' %}man/intro.6">intro(6)</a>,
+<a href="{% url 'index' %}man/intro.7">intro(7)</a>,
+<a href="{% url 'index' %}man/intro.8">intro(8)</a>,
 </p>
 
 <p>
 Other interesting manuals (at least for me):
 <ul>
-    <li><a href="{% url 'index' %}en/man/man.7.html">man(7)</a> is written in the old language, <a href="{% url 'index' %}en/man/mdoc.7.html">mdoc(7)</a> is written in the new language. OpenBSD versions seem to be significantly newer: <a href="http://man.openbsd.org/man.7">man(7)</a>, <a href="http://man.openbsd.org/mdoc.7">mdoc(7)</a>.</li>
+    <li><a href="{% url 'index' %}man/man.7">man(7)</a> is written in the old language, <a href="{% url 'index' %}man/mdoc.7">mdoc(7)</a> is written in the new language. OpenBSD versions seem to be significantly newer: <a href="http://man.openbsd.org/man.7">man(7)</a>, <a href="http://man.openbsd.org/mdoc.7">mdoc(7)</a>.</li>
 </ul>
 </p>
 
@@ -47,11 +47,11 @@ Other interesting manuals (at least for me):
     <li>improve page layout and CSS stylesheets</li>
     <li>import testing repositories</li>
     <li>when downloading, ensure that same packages from different repos don't overwrite themselves (though if pacman does not handle it, it should never happen)</li>
-    <li>post-processing: find cross-references like <code>&lt;b&gt;intro&lt;/b&gt;(1)</code> resulting from pages written in <a href="{% url 'index' %}en/man/man.7.html">man(7)</a> (see <a href="https://github.com/Debian/debiman/issues/15#issuecomment-325201593">debiman's approach</a>)</li>
+    <li>post-processing: find cross-references like <code>&lt;b&gt;intro&lt;/b&gt;(1)</code> resulting from pages written in <a href="{% url 'index' %}man/man.7">man(7)</a> (see <a href="https://github.com/Debian/debiman/issues/15#issuecomment-325201593">debiman's approach</a>)</li>
     <li>
         problematic pages:
         <ul>
-            <li>HTML converter fails on <a href="{% url 'index' %}zh_CN/man/[.1.html">[(1)</a> (reference to a <it>file</it></li>
+            <li>HTML converter fails on <a href="{% url 'index' %}zh_CN/man/[.1">[(1)</a> (reference to a <it>file</it></li>
         </ul>
     </li>
 </ul>

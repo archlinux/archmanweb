@@ -4,9 +4,9 @@ from django.shortcuts import render
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Count
-from django.urls import reverse
 
 from .models import Package, ManPage, SymbolicLink
+from .utils import reverse_man_url
 
 def index(request):
     count_man_pages = ManPage.objects.count()
@@ -110,7 +110,21 @@ def listing(request, *, repo=None, pkgname=None):
     }
     return render(request, "listing.html", context)
 
-def try_symlink_or_404(request, lang, repo, pkgname, man_name, man_section):
+def _handle_section_and_lang(section_or_lang, lang_or_section):
+    if section_or_lang is None:
+        section_or_lang, lang_or_section = lang_or_section, section_or_lang
+    # regex can't split this, because '.' can appear in lang
+    if section_or_lang is not None and lang_or_section is None and '.' in section_or_lang:
+        section_or_lang, lang_or_section = section_or_lang.split(".", maxsplit=1)
+    # TODO: this query takes about 30ms, the results should be cached or something
+    all_sections = set(v[0] for v in ManPage.objects.values_list("section").distinct("section"))
+    if section_or_lang in all_sections:
+        man_section, lang = section_or_lang, lang_or_section
+    else:
+        lang, man_section = section_or_lang, lang_or_section
+    return man_section, lang
+
+def try_symlink_or_404(request, lang, repo, pkgname, man_name, man_section, output_type):
     if repo is None and pkgname is None:
         query = SymbolicLink.objects.filter(from_section=man_section, from_name=man_name, lang=lang)
     elif repo is None:
@@ -123,7 +137,7 @@ def try_symlink_or_404(request, lang, repo, pkgname, man_name, man_section):
     if len(query) > 0:
         symlink = query[0]
         # repo and pkgname are not added, the target might be in a different package
-        url = reverse("index") + symlink.lang + "/man/{}.{}.html".format(symlink.to_name, symlink.to_section)
+        url = reverse_man_url("", "", symlink.to_name, symlink.to_section, symlink.lang, output_type)
         return HttpResponseRedirect(url)
 
     if repo and pkgname:
@@ -133,55 +147,68 @@ def try_symlink_or_404(request, lang, repo, pkgname, man_name, man_section):
     else:
         raise Http404("Man page {}({}) not found in any package.".format(man_name, man_section))
 
-def man_page(request, lang, path, man_name, man_section):
-    # In the future we might support even different architectures and versions
-    if path:
-        _parts = path.strip("/").split("/")
-    else:
-        _parts = []
-    if len(_parts) == 0:
-        repo = None
-        pkgname = None
-    elif len(_parts) == 1:
-        repo = None
-        pkgname = _parts[0]
-    elif len(_parts) == 2:
-        repo = _parts[0]
-        pkgname = _parts[1]
-    else:
-        raise Http404("Invalid package path: {}".format(path))
+def man_page(request, *, repo=None, pkgname=None, man_name=None, section_or_lang=None, lang_or_section=None, url_output_type=None):
+    # validate input parameters
+    if repo is not None and pkgname is None:
+        return HttpResponse("Specifying repo ({}) without a pkg name should not be allowed.".format(repo), status=500)
+    if not man_name:
+        return HttpResponse("The name of the man page was not specified.", status=400)
+    assert "/" not in man_name
+    man_section, url_lang = _handle_section_and_lang(section_or_lang, lang_or_section)
+    lang = url_lang or "en"
+    serve_output_type = url_output_type or "html"
+    if serve_output_type != "html":
+        return HttpResponse("Serving of {} content type is not implemented yet.".format(serve_output_type), status=501)
 
     # this is important because we don't know if the user explicitly specified
     # the language or followed a link to a localized page, which does not exist
     def fall_back_to_english():
-        url = "/en/man/{}{}.{}.html".format(path, man_name, man_section)
+        url = reverse_man_url(repo, pkgname, man_name, man_section, "en", url_output_type)
         return HttpResponseRedirect(url)
 
     # find the man page and package containing it
-    if repo is None and pkgname is None:
-        query = ManPage.objects.filter(section=man_section, name=man_name, lang=lang)
-        if len(query) == 0 and lang != "en":
-            return fall_back_to_english()
-    elif repo is None:
-        query = ManPage.objects.filter(section=man_section, name=man_name, lang=lang, package__name=pkgname)
-        if len(query) == 0 and lang != "en":
-            return fall_back_to_english()
+    if man_section is None:
+        if repo is None and pkgname is None:
+            query = ManPage.objects.filter(name=man_name, lang=lang)
+            if len(query) == 0 and lang != "en":
+                return fall_back_to_english()
+        elif repo is None:
+            query = ManPage.objects.filter(name=man_name, lang=lang, package__name=pkgname)
+            if len(query) == 0 and lang != "en":
+                return fall_back_to_english()
+        else:
+            query = ManPage.objects.filter(name=man_name, lang=lang, package__name=pkgname, package__repo=repo)
+            if len(query) == 0 and lang != "en":
+                return fall_back_to_english()
+        # TODO: we're trying to guess the newest version, but lexical ordering is too weak
+        query = query.order_by("section", "-package__version")
     else:
-        query = ManPage.objects.filter(section=man_section, name=man_name, lang=lang, package__name=pkgname, package__repo=repo)
-        if len(query) == 0 and lang != "en":
-            return fall_back_to_english()
-    # TODO: we're trying to guess the newest version, but lexical ordering is too weak
-    query = query.order_by("-package__version")
+        if repo is None and pkgname is None:
+            query = ManPage.objects.filter(section=man_section, name=man_name, lang=lang)
+            if len(query) == 0 and lang != "en":
+                return fall_back_to_english()
+        elif repo is None:
+            query = ManPage.objects.filter(section=man_section, name=man_name, lang=lang, package__name=pkgname)
+            if len(query) == 0 and lang != "en":
+                return fall_back_to_english()
+        else:
+            query = ManPage.objects.filter(section=man_section, name=man_name, lang=lang, package__name=pkgname, package__repo=repo)
+            if len(query) == 0 and lang != "en":
+                return fall_back_to_english()
+        # TODO: we're trying to guess the newest version, but lexical ordering is too weak
+        query = query.order_by("-package__version")
 
     if len(query) == 0:
-        return try_symlink_or_404(request, lang, repo, pkgname, man_name, man_section)
+        return try_symlink_or_404(request, lang, repo, pkgname, man_name, man_section, url_output_type)
     else:
         db_man = query[0]
+        if man_section is None:
+            return HttpResponseRedirect(reverse_man_url(repo, pkgname, man_name, db_man.section, url_lang, url_output_type))
         db_pkg = db_man.package
 
     # links to other packages providing the same manual
     other_versions = []
-    query = ManPage.objects.filter(section=man_section, name=man_name, lang=lang) \
+    query = ManPage.objects.filter(section=db_man.section, name=man_name, lang=lang) \
             .exclude(package__id=db_pkg.id) \
             .order_by("package__repo", "package__name")
     for man in query:
@@ -194,27 +221,15 @@ def man_page(request, lang, path, man_name, man_section):
         }
         other_versions.append(info)
 
-    # links for other languages - they will lead exactly to the same package iff the user specified "path"
+    # links to other languages - might lead to different package, even if the user specified repo or pkgname
     other_languages = set()
-    if repo is None and pkgname is None:
-        query = ManPage.objects.filter(section=db_man.section,
-                                       name=db_man.name) \
-                               .exclude(lang=lang)
-    elif repo is None:
-        query = ManPage.objects.filter(section=db_man.section,
-                                       name=db_man.name,
-                                       package__name=pkgname) \
-                               .exclude(lang=lang)
-    else:
-        query = ManPage.objects.filter(section=db_man.section,
-                                       name=db_man.name,
-                                       package__name=pkgname,
-                                       package__repo=repo) \
-                               .exclude(lang=lang)
+    query = ManPage.objects.filter(section=db_man.section,
+                                   name=db_man.name) \
+                           .exclude(lang=lang)
     for man in query:
         other_languages.add(man.lang)
 
-    # links to other sections
+    # links to other sections - might lead to different package, even if the user specified repo or pkgname
     other_sections = set()
     query = ManPage.objects.filter(name=db_man.name, lang=lang) \
             .exclude(section=db_man.section)
@@ -223,7 +238,7 @@ def man_page(request, lang, path, man_name, man_section):
 
     # convert the man page to HTML if not already done
     if db_man.html is None:
-        url_pattern = reverse("index") + lang + "/man/%N.%S.html"
+        url_pattern = reverse_man_url("", "", "%N", "%S", lang, "")
         cmd = "mandoc -T html -O fragment,man={}".format(url_pattern)
         p = subprocess.run(cmd, shell=True, check=True, input=db_man.content, encoding="utf-8", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         assert p.stdout
@@ -231,7 +246,10 @@ def man_page(request, lang, path, man_name, man_section):
         db_man.save()
 
     context = {
-        "url_path": path,
+        "url_repo": repo,
+        "url_pkgname": pkgname,
+        "url_lang": url_lang,
+        "url_output_type": url_output_type,
         "pkg": db_pkg,
         "man": db_man,
         "other_versions": other_versions,
