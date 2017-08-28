@@ -116,9 +116,7 @@ def _handle_section_and_lang(section_or_lang, lang_or_section):
     # regex can't split this, because '.' can appear in lang
     if section_or_lang is not None and lang_or_section is None and '.' in section_or_lang:
         section_or_lang, lang_or_section = section_or_lang.split(".", maxsplit=1)
-    # TODO: this query takes about 30ms, the results should be cached or something
-    all_sections = set(v[0] for v in ManPage.objects.values_list("section").distinct("section"))
-    if section_or_lang in all_sections:
+    if ManPage.objects.filter(section=section_or_lang).exists():
         man_section, lang = section_or_lang, lang_or_section
     else:
         lang, man_section = section_or_lang, lang_or_section
