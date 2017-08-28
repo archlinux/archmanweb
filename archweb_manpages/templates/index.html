@@ -81,4 +81,11 @@ Other interesting manuals (at least for me):
     <li><a href="{% url 'index' %}man/CA.pl.1ssl.en">CA.pl.1ssl.en</a></li>
     <li><a href="{% url 'index' %}man/CA.pl.en">CA.pl.en</a></li>
 </ul>
+
+<h2>Test cases for language fallback</h2>
+<ul>
+    <li><a href="{% url 'index' %}man/nvidia-smi.cs">nvidia-smi.cs</a> &rarr; <a href="{% url 'index' %}man/nvidia-smi.en">nvidia-smi.en</a> &rarr; <a href="{% url 'index' %}man/nvidia-smi.1.en">nvidia-smi.1.en</a>
+        (maybe we should try harder and avoid the double redirect)
+    </li>
+</ul>
 </p>
