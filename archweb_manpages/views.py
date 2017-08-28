@@ -225,6 +225,7 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
         return HttpResponseRedirect(url)
 
     # find the man page and package containing it
+    # TODO: add LIMIT 1 to these queries
     if man_section is None:
         if repo is None and pkgname is None:
             query = ManPage.objects.filter(name=man_name, lang=lang)
@@ -278,6 +279,7 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
             "mansection": man.section,
         }
         other_versions.append(info)
+    # TODO: show also symlinks?
 
     # links to other languages - might lead to different package, even if the user specified repo or pkgname
     other_languages = set()
@@ -286,6 +288,7 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
                            .exclude(lang=lang)
     for man in query:
         other_languages.add(man.lang)
+    # TODO: show also symlinks?
 
     # links to other sections - might lead to different package, even if the user specified repo or pkgname
     other_sections = set()
@@ -293,6 +296,7 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
             .exclude(section=db_man.section)
     for man in query:
         other_sections.add(man.section)
+    # TODO: show also symlinks?
 
     # convert the man page to HTML if not already done
     if db_man.html is None:

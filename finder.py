@@ -202,6 +202,7 @@ class ManPagesFinder:
                 if file.endswith(".gz"):
                     file = file[:-3]
                     man = gzip.decompress(man)
+                # TODO: use the lang detected from the man path as a hint (see evim.1.ru.KOI8-R)
                 man = decode(man)
                 # django complains, the DBMS would drop it anyway
                 man = man.replace("\0", "")
