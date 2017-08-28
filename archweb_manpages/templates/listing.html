@@ -1,4 +1,5 @@
 {% load query_transform %}
+{% load reverse_man_url %}
 
 {% if pkg %}
     <p>The package
@@ -11,7 +12,7 @@
     {% for man in man_pages %}
         <li>
             <span class="language-tag">[{{ man.lang }}]</span>
-            <a href="{% url 'index' %}{{ man.lang }}/man/{{ man.name }}.{{ man.section }}.html">{{ man.name }}({{ man.section }})</a>
+            <a href="{% reverse_man_url url_repo url_pkgname man.name man.section man.lang '' %}">{{ man.name }}({{ man.section }})</a>
         </li>
     {% endfor %}
     </ul>
@@ -51,9 +52,9 @@
     {% for symlink in symlinks %}
         <li>
             <span class="language-tag">[{{ symlink.lang }}]</span>
-            <a href="{% url 'index' %}{{ symlink.lang }}/man/{{ pkg.repo }}/{{ pkg.name }}/{{ symlink.from_name }}.{{ symlink.from_section }}.html">{{ symlink.from_name }}({{ symlink.from_section }})</a>
+            <a href="{% reverse_man_url pkg.repo pkg.name symlink.from_name symlink.from_section symlink.lang '' %}">{{ symlink.from_name }}({{ symlink.from_section }})</a>
             &rarr;
-            <a href="{% url 'index' %}{{ symlink.lang }}/man/{{ symlink.to_name }}.{{ symlink.to_section }}.html">{{ symlink.to_name }}({{ symlink.to_section }})</a>
+            <a href="{% reverse_man_url '' '' symlink.to_name symlink.to_section symlink.lang '' %}">{{ symlink.to_name }}({{ symlink.to_section }})</a>
         </li>
     {% endfor %}
     </ul>

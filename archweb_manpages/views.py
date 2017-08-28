@@ -104,6 +104,8 @@ def listing(request, *, repo=None, pkgname=None):
         symlinks = paginate(request, "page_symlinks", symlinks, 500)
 
     context = {
+        "url_repo": repo,
+        "url_pkgname": pkgname,
         "pkg": db_pkg,
         "man_pages": man_pages,
         "symlinks": symlinks,
