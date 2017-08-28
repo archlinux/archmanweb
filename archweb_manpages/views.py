@@ -175,8 +175,7 @@ def try_symlink_or_404(request, lang, repo, pkgname, man_name, man_section, outp
         else:
             query = SymbolicLink.objects.filter(from_name=man_name, lang=lang, package__name=pkgname, package__repo=repo)
         # TODO: we're trying to guess the newest version, but lexical ordering is too weak
-        # TODO: add LIMIT 1
-        query = query.order_by("from_section", "-package__version")
+        query = query.order_by("from_section", "-package__version")[:1]
     else:
         if repo is None and pkgname is None:
             query = SymbolicLink.objects.filter(from_section=man_section, from_name=man_name, lang=lang)
@@ -185,8 +184,7 @@ def try_symlink_or_404(request, lang, repo, pkgname, man_name, man_section, outp
         else:
             query = SymbolicLink.objects.filter(from_section=man_section, from_name=man_name, lang=lang, package__name=pkgname, package__repo=repo)
         # TODO: we're trying to guess the newest version, but lexical ordering is too weak
-        # TODO: add LIMIT 1
-        query = query.order_by("-package__version")
+        query = query.order_by("-package__version")[:1]
 
     if len(query) > 0:
         symlink = query[0]
@@ -218,46 +216,32 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
     if serve_output_type != "html":
         return HttpResponse("Serving of {} content type is not implemented yet.".format(serve_output_type), status=501)
 
-    # this is important because we don't know if the user explicitly specified
-    # the language or followed a link to a localized page, which does not exist
-    def fall_back_to_english():
-        url = reverse_man_url(repo, pkgname, man_name, man_section, "en", url_output_type)
-        return HttpResponseRedirect(url)
-
     # find the man page and package containing it
-    # TODO: add LIMIT 1 to these queries
     if man_section is None:
         if repo is None and pkgname is None:
             query = ManPage.objects.filter(name=man_name, lang=lang)
-            if len(query) == 0 and lang != "en":
-                return fall_back_to_english()
         elif repo is None:
             query = ManPage.objects.filter(name=man_name, lang=lang, package__name=pkgname)
-            if len(query) == 0 and lang != "en":
-                return fall_back_to_english()
         else:
             query = ManPage.objects.filter(name=man_name, lang=lang, package__name=pkgname, package__repo=repo)
-            if len(query) == 0 and lang != "en":
-                return fall_back_to_english()
         # TODO: we're trying to guess the newest version, but lexical ordering is too weak
-        query = query.order_by("section", "-package__version")
+        query = query.order_by("section", "-package__version")[:1]
     else:
         if repo is None and pkgname is None:
             query = ManPage.objects.filter(section=man_section, name=man_name, lang=lang)
-            if len(query) == 0 and lang != "en":
-                return fall_back_to_english()
         elif repo is None:
             query = ManPage.objects.filter(section=man_section, name=man_name, lang=lang, package__name=pkgname)
-            if len(query) == 0 and lang != "en":
-                return fall_back_to_english()
         else:
             query = ManPage.objects.filter(section=man_section, name=man_name, lang=lang, package__name=pkgname, package__repo=repo)
-            if len(query) == 0 and lang != "en":
-                return fall_back_to_english()
         # TODO: we're trying to guess the newest version, but lexical ordering is too weak
-        query = query.order_by("-package__version")
+        query = query.order_by("-package__version")[:1]
 
     if len(query) == 0:
+        if lang != "en":
+            # this is important because we don't know if the user explicitly specified
+            # the language or followed a link to a localized page, which does not exist
+            url = reverse_man_url(repo, pkgname, man_name, man_section, "en", url_output_type)
+            return HttpResponseRedirect(url)
         return try_symlink_or_404(request, lang, repo, pkgname, man_name, man_section, url_output_type)
     else:
         db_man = query[0]
