@@ -112,27 +112,81 @@ def listing(request, *, repo=None, pkgname=None):
     }
     return render(request, "listing.html", context)
 
-def _handle_section_and_lang(section_or_lang, lang_or_section):
-    if section_or_lang is None:
-        section_or_lang, lang_or_section = lang_or_section, section_or_lang
-    # regex can't split this, because '.' can appear in lang
-    if section_or_lang is not None and lang_or_section is None and '.' in section_or_lang:
-        section_or_lang, lang_or_section = section_or_lang.split(".", maxsplit=1)
-    if ManPage.objects.filter(section=section_or_lang).exists():
-        man_section, lang = section_or_lang, lang_or_section
+def _exists_name_section(name, section):
+    return ManPage.objects.filter(name=name, section=section).exists() or \
+           SymbolicLink.objects.filter(from_name=name, from_section=section).exists()
+
+def _exists_language(lang):
+    # cross-language symlinks are not allowed
+    return ManPage.objects.filter(lang=lang).exists()
+
+def _exists_name_language(name, lang):
+    # cross-language symlinks are not allowed
+    return ManPage.objects.filter(name=name, lang=lang).exists()
+
+def _exists_name_section_language(name, section, lang):
+    return ManPage.objects.filter(name=name, section=section, lang=lang).exists() or \
+           SymbolicLink.objects.filter(from_name=name, from_section=section, lang=lang).exists()
+
+# TODO: This doesn't cover languages with explicit encoding, but only utf8 should be allowed
+# anyway, because that's what we serve. Adjust the database and update script as necessary.
+def _parse_man_name_section_lang(url_snippet):
+    # Man page names can contain dots, so we need to parse from the right. There are still
+    # some ambiguities for shortcuts like gimp-2.8 (shortcut for gimp-2.8(1)), jclient.pl
+    # (shortcut for jclient.pl.1.en) etc., but we'll either detect that the page given by
+    # the greedy algorithm does not exist or the user can specify the section or language
+    # to get the version they want.
+    parts = url_snippet.split(".")
+    if len(parts) == 1:
+        # name
+        return url_snippet, None, None
+    name = ".".join(parts[:-1])
+    # the last part can be a section or a language
+    if _exists_name_section(name, parts[-1]):
+        # any.name.section: language cannot come before section, so we're done
+        return name, parts[-1], None
+    elif len(parts) == 2:
+        if _exists_name_language(name, parts[-1]):
+            # name.lang
+            return name, None, parts[-1]
+        else:
+            # dotted.name
+            return url_snippet, None, None
+    elif _exists_language(parts[-1]):
+        name2 = ".".join(parts[:-2])
+        if _exists_name_section_language(name2, parts[-2], parts[-1]):
+            # name.section.lang
+            return name2, parts[-2], parts[-1]
+        if _exists_name_language(name, parts[-1]):
+            # name.with.dots.lang
+            return name, None, parts[-1]
+        # name.with.dots
+        return url_snippet, None, None
     else:
-        lang, man_section = section_or_lang, lang_or_section
-    return man_section, lang
+        # name.with.dots
+        return url_snippet, None, None
 
 def try_symlink_or_404(request, lang, repo, pkgname, man_name, man_section, output_type):
-    if repo is None and pkgname is None:
-        query = SymbolicLink.objects.filter(from_section=man_section, from_name=man_name, lang=lang)
-    elif repo is None:
-        query = SymbolicLink.objects.filter(from_section=man_section, from_name=man_name, lang=lang, package__name=pkgname)
+    if man_section is None:
+        if repo is None and pkgname is None:
+            query = SymbolicLink.objects.filter(from_name=man_name, lang=lang)
+        elif repo is None:
+            query = SymbolicLink.objects.filter(from_name=man_name, lang=lang, package__name=pkgname)
+        else:
+            query = SymbolicLink.objects.filter(from_name=man_name, lang=lang, package__name=pkgname, package__repo=repo)
+        # TODO: we're trying to guess the newest version, but lexical ordering is too weak
+        # TODO: add LIMIT 1
+        query = query.order_by("from_section", "-package__version")
     else:
-        query = SymbolicLink.objects.filter(from_section=man_section, from_name=man_name, lang=lang, package__name=pkgname, package__repo=repo)
-    # TODO: we're trying to guess the newest version, but lexical ordering is too weak
-    query = query.order_by("-package__version")
+        if repo is None and pkgname is None:
+            query = SymbolicLink.objects.filter(from_section=man_section, from_name=man_name, lang=lang)
+        elif repo is None:
+            query = SymbolicLink.objects.filter(from_section=man_section, from_name=man_name, lang=lang, package__name=pkgname)
+        else:
+            query = SymbolicLink.objects.filter(from_section=man_section, from_name=man_name, lang=lang, package__name=pkgname, package__repo=repo)
+        # TODO: we're trying to guess the newest version, but lexical ordering is too weak
+        # TODO: add LIMIT 1
+        query = query.order_by("-package__version")
 
     if len(query) > 0:
         symlink = query[0]
@@ -140,21 +194,25 @@ def try_symlink_or_404(request, lang, repo, pkgname, man_name, man_section, outp
         url = reverse_man_url("", "", symlink.to_name, symlink.to_section, symlink.lang, output_type)
         return HttpResponseRedirect(url)
 
-    if repo and pkgname:
-        raise Http404("Man page {}({}) not found in package {}/{}.".format(man_name, man_section, repo, pkgname))
-    elif pkgname:
-        raise Http404("Man page {}({}) not found in package {}.".format(man_name, man_section, pkgname))
-    else:
-        raise Http404("Man page {}({}) not found in any package.".format(man_name, man_section))
+    man_page = man_name
+    if man_section:
+        man_page += "." + man_section
 
-def man_page(request, *, repo=None, pkgname=None, man_name=None, section_or_lang=None, lang_or_section=None, url_output_type=None):
+    if repo and pkgname:
+        raise Http404("No manual entry for {} found in package {}/{}.".format(man_page, repo, pkgname))
+    elif pkgname:
+        raise Http404("No manual entry for {} found in package {}.".format(man_page, pkgname))
+    else:
+        raise Http404("No manual entry for {} found in any package.".format(man_page))
+
+def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_output_type=None):
     # validate input parameters
     if repo is not None and pkgname is None:
         return HttpResponse("Specifying repo ({}) without a pkg name should not be allowed.".format(repo), status=500)
-    if not man_name:
+    if not name_section_lang:
         return HttpResponse("The name of the man page was not specified.", status=400)
-    assert "/" not in man_name
-    man_section, url_lang = _handle_section_and_lang(section_or_lang, lang_or_section)
+    assert "/" not in name_section_lang
+    man_name, man_section, url_lang = _parse_man_name_section_lang(name_section_lang)
     lang = url_lang or "en"
     serve_output_type = url_output_type or "html"
     if serve_output_type != "html":

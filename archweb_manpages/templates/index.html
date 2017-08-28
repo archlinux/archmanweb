@@ -57,8 +57,28 @@ Other interesting manuals (at least for me):
     <li>
         problematic pages:
         <ul>
-            <li>HTML converter fails on <a href="{% url 'index' %}man/[.1.zh_CN">[(1)</a>, <a href="{% url 'index' %}man/30-systemd-environment-d-generator.8.en">30-systemd-environment-d-generator(8)</a> (reference to a <it>file</it></li>
+            <li>HTML converter fails on <a href="{% url 'index' %}man/[.1.zh_CN">[(1)</a>, <a href="{% url 'index' %}man/30-systemd-environment-d-generator.8.en">30-systemd-environment-d-generator(8)</a> (reference to a <it>file</it>). The solution would probably involve using a modified <a href="http://mdocml.bsd.lv/man/soelim.1.html">soelim(1)</a> with mandoc.</li>
         </ul>
     </li>
+</ul>
+
+<h2>Test cases for URLs with dots</h2>
+<ul>
+    <li><a href="{% url 'index' %}man/intro">intro</a></li>
+    <li><a href="{% url 'index' %}man/intro.1">intro.1</a></li>
+    <li><a href="{% url 'index' %}man/intro.1.en">intro.1.en</a></li>
+    <li><a href="{% url 'index' %}man/intro.en">intro.en</a></li>
+    <li><a href="{% url 'index' %}man/systemd.service">systemd.service</a></li>
+    <li><a href="{% url 'index' %}man/systemd.service.5">systemd.service.5</a></li>
+    <li><a href="{% url 'index' %}man/systemd.service.5.en">systemd.service.5.en</a></li>
+    <li><a href="{% url 'index' %}man/systemd.service.en">systemd.service.en</a></li>
+    <li><a href="{% url 'index' %}man/gimp-2.8">gimp-2.8</a></li>
+    <li><a href="{% url 'index' %}man/gimp-2.8.1">gimp-2.8.1</a></li>
+    <li><a href="{% url 'index' %}man/gimp-2.8.1.en">gimp-2.8.1.en</a></li>
+    <li><a href="{% url 'index' %}man/gimp-2.8.en">gimp-2.8.en</a></li>
+    <li><a href="{% url 'index' %}man/CA.pl">CA.pl</a></li>
+    <li><a href="{% url 'index' %}man/CA.pl.1ssl">CA.pl.1ssl</a></li>
+    <li><a href="{% url 'index' %}man/CA.pl.1ssl.en">CA.pl.1ssl.en</a></li>
+    <li><a href="{% url 'index' %}man/CA.pl.en">CA.pl.en</a></li>
 </ul>
 </p>

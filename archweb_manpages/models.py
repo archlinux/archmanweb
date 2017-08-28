@@ -52,7 +52,7 @@ class ManPage(models.Model):
             ('name', 'lang', 'section'),
             ('section', 'name', 'lang'),
             ('lang', 'name', 'section'),
-            # for filter in 'links to other sections'
+            # for optional 'language' and for filter in 'links to other sections'
             ('section', 'name'),
             # for optional 'section' and for filter in 'links to other sections'
             ('name', 'lang'),
@@ -89,6 +89,13 @@ class SymbolicLink(models.Model):
     class Meta:
         unique_together = (
             ('package', 'lang', 'from_section', 'from_name'),
+        )
+        index_together = (
+            # for checks in _parse_man_name_section_lang
+            ('from_section', 'from_name'),
+            ('from_section', 'from_name', 'lang'),
+            # for checks in try_symlink_or_404
+            ('from_name', 'lang'),
         )
 
     def __str__(self):

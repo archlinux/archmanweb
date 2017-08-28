@@ -8,9 +8,7 @@ urlpatterns = [
     url(r'^man/'
         r'((?P<repo>[A-Za-z0-9@._+\-]+)/)??'
         r'((?P<pkgname>[A-Za-z0-9@._+\-]+)/)?'
-        r'(?P<man_name>[A-Za-z0-9@._+\-:\[\]]+?)'
-        r'(\.(?P<section_or_lang>[A-Za-z0-9._\-]+?))??'
-        r'(\.(?P<lang_or_section>[A-Za-z0-9._\-]+?))??'
-        r'(\.(?P<url_output_type>html|raw))?$',
+        r'(?P<name_section_lang>[A-Za-z0-9@._+\-:\[\]]+?)'
+        r'(\.(?P<url_output_type>html|txt|raw))?$',
         views.man_page, name='man_page'),
 ]
