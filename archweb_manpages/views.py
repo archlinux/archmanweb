@@ -152,13 +152,16 @@ def _parse_man_name_section_lang(url_snippet, *, force_lang=None):
         # any.name.section: language cannot come before section, so we're done
         return name, parts[-1], None
     elif len(parts) == 2:
+        if force_lang is not None and not _exists_language(parts[-1]):
+            # we still need to validate the input
+            return url_snippet, None, None
         if _exists_name_language(name, force_lang or parts[-1]):
             # name.lang
             return name, None, force_lang or parts[-1]
         else:
             # dotted.name
             return url_snippet, None, None
-    elif _exists_language(force_lang or parts[-1]):
+    elif _exists_language(parts[-1]):
         name2 = ".".join(parts[:-2])
         if _exists_name_section_language(name2, parts[-2], force_lang or parts[-1]):
             # name.section.lang
@@ -172,45 +175,44 @@ def _parse_man_name_section_lang(url_snippet, *, force_lang=None):
         # name.with.dots
         return url_snippet, None, None
 
-def try_redirect_or_404(request, repo, pkgname, name_section_lang, man_name, man_section, lang, output_type):
-    if lang:
-        if man_section is None:
-            if repo is None and pkgname is None:
-                query = SymbolicLink.objects.filter(from_name=man_name, lang=lang)
-            elif repo is None:
-                query = SymbolicLink.objects.filter(from_name=man_name, lang=lang, package__name=pkgname)
-            else:
-                query = SymbolicLink.objects.filter(from_name=man_name, lang=lang, package__name=pkgname, package__repo=repo)
-            # TODO: we're trying to guess the newest version, but lexical ordering is too weak
-            query = query.order_by("from_section", "-package__version")[:1]
+def try_redirect_or_404(request, repo, pkgname, man_name, man_section, lang, output_type, name_section_lang):
+    if man_section is None:
+        if repo is None and pkgname is None:
+            query = SymbolicLink.objects.filter(from_name=man_name, lang=lang)
+        elif repo is None:
+            query = SymbolicLink.objects.filter(from_name=man_name, lang=lang, package__name=pkgname)
         else:
-            if repo is None and pkgname is None:
-                query = SymbolicLink.objects.filter(from_section=man_section, from_name=man_name, lang=lang)
-            elif repo is None:
-                query = SymbolicLink.objects.filter(from_section=man_section, from_name=man_name, lang=lang, package__name=pkgname)
-            else:
-                query = SymbolicLink.objects.filter(from_section=man_section, from_name=man_name, lang=lang, package__name=pkgname, package__repo=repo)
-            # TODO: we're trying to guess the newest version, but lexical ordering is too weak
-            query = query.order_by("-package__version")[:1]
+            query = SymbolicLink.objects.filter(from_name=man_name, lang=lang, package__name=pkgname, package__repo=repo)
+        # TODO: we're trying to guess the newest version, but lexical ordering is too weak
+        query = query.order_by("from_section", "-package__version")[:1]
+    else:
+        if repo is None and pkgname is None:
+            query = SymbolicLink.objects.filter(from_section=man_section, from_name=man_name, lang=lang)
+        elif repo is None:
+            query = SymbolicLink.objects.filter(from_section=man_section, from_name=man_name, lang=lang, package__name=pkgname)
+        else:
+            query = SymbolicLink.objects.filter(from_section=man_section, from_name=man_name, lang=lang, package__name=pkgname, package__repo=repo)
+        # TODO: we're trying to guess the newest version, but lexical ordering is too weak
+        query = query.order_by("-package__version")[:1]
 
-        if len(query) > 0:
-            symlink = query[0]
-            # repo and pkgname are not added, the target might be in a different package
-            url = reverse_man_url("", "", symlink.to_name, symlink.to_section, symlink.lang, output_type)
-            return HttpResponseRedirect(url)
+    if len(query) > 0:
+        symlink = query[0]
+        # repo and pkgname are not added, the target might be in a different package
+        url = reverse_man_url("", "", symlink.to_name, symlink.to_section, symlink.lang, output_type)
+        return HttpResponseRedirect(url)
 
     # Try the default language before giving 404.
     # This is important because we don't know if the user explicitly specified
     # the language or followed a link to a localized page, which does not exist.
     # TODO: we could parse the referer header and redirect only links coming from this site
-    if lang != "en":
-        # if page "foo" does not exist in language "bar", we'll get "foo.bar" as the
-        # man_name, so we need to re-parse the URL and force the default language
-        man_name, man_section, parsed_lang = _parse_man_name_section_lang(name_section_lang, force_lang="en")
-        if parsed_lang == "en":
-            url = reverse_man_url(repo, pkgname, man_name, man_section, "en", output_type)
-            return HttpResponseRedirect(url)
-        # otherwise page does not exist in en -> 404
+    #
+    # Note: if page "foo" does not exist in language "bar", we'll get "foo.bar" as the
+    # man_name, so we need to re-parse the URL and force the default language.
+    man_name, man_section, parsed_lang = _parse_man_name_section_lang(name_section_lang, force_lang="en")
+    if parsed_lang == "en":
+        url = reverse_man_url(repo, pkgname, man_name, man_section, "en", output_type)
+        return HttpResponseRedirect(url)
+    # otherwise page does not exist in en -> 404
 
     man_page = man_name
     if man_section:
@@ -257,7 +259,7 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
         query = query.order_by("-package__version")[:1]
 
     if len(query) == 0:
-        return try_redirect_or_404(request, repo, pkgname, name_section_lang, man_name, man_section, url_lang, url_output_type)
+        return try_redirect_or_404(request, repo, pkgname, man_name, man_section, lang, url_output_type, name_section_lang)
     else:
         db_man = query[0]
         if man_section is None:
