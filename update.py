@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 
+import argparse
 import os.path
 import logging
 from pathlib import PurePath
@@ -13,6 +14,9 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
 import django
 django.setup()
 from archweb_manpages.models import Package, ManPage, SymbolicLink
+
+
+logger = logging.getLogger(__name__)
 
 
 class UnknownManPath(Exception):
@@ -38,11 +42,14 @@ def parse_man_path(path):
     return man_name, man_section, man_lang
 
 
-def update_packages(finder, *, full_update=False):
+def update_packages(finder, *, force=False, only_repos=None):
     updated_pkgs = []
 
     # update packages in the django database
     for db in finder.sync_db.get_syncdbs():
+        if only_repos and db.name not in only_repos:
+            continue
+        logger.info("Updating packages from repository '{}'...".format(db.name))
         for pkg in db.pkgcache:
             result = Package.objects.filter(repo=db.name, name=pkg.name)
             assert len(result) in {0, 1}
@@ -59,7 +66,7 @@ def update_packages(finder, *, full_update=False):
                 if pyalpm.vercmp(db_package.version, pkg.version) == -1:
                     # db_package.version will be updated later, in the same transaction as the man pages
                     updated_pkgs.append(pkg)
-                elif full_update is True:
+                elif force is True:
                     updated_pkgs.append(pkg)
 
     # delete old packages from the django database
@@ -71,10 +78,15 @@ def update_packages(finder, *, full_update=False):
 
 
 def update_man_pages(finder, updated_pkgs):
+    logger.info("Updating man pages from {} packages...".format(len(updated_pkgs)))
+
     for pkg in updated_pkgs:
         db_pkg = Package.objects.filter(repo=pkg.db.name, name=pkg.name)[0]
         files = set(finder.get_man_files(pkg))
         if not files:
+            # just update the pkgver in the database
+            db_pkg.version = pkg.version
+            db_pkg.save()
             continue
 
         # the files above include the .gz suffix, we need to collect even the
@@ -190,11 +202,20 @@ if __name__ == "__main__":
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 
+    parser = argparse.ArgumentParser(description="update man pages in the django database")
+    parser.add_argument("--force", action="store_true",
+                        help="force an import of man pages from all packages, even if they were not updated recently")
+    parser.add_argument("--only-repos", action="store", nargs="+", metavar="NAME",
+                        help="import packages (and man pages) only from these repositories")
+    parser.add_argument("--only-packages", action="store", nargs="+", metavar="NAME",
+                        help="import man pages only from these packages")
+    args = parser.parse_args()
+
     finder = ManPagesFinder("./.cache")
     finder.refresh()
 
-    # TODO: parse this from command line
-    full_update = False
-
-    updated_pkgs = update_packages(finder, full_update=full_update)
-    update_man_pages(finder, updated_pkgs)
+    updated_pkgs = update_packages(finder, force=args.force, only_repos=args.only_repos)
+    if args.only_packages is None:
+        update_man_pages(finder, updated_pkgs)
+    else:
+        update_man_pages(finder, [p for p in updated_pkgs if p.name in args.only_packages])
