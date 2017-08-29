@@ -91,4 +91,14 @@ Other interesting manuals (at least for me):
     <li><a href="{% url 'index' %}man/nvidia-smi.foo">nvidia-smi.foo</a> &rarr; 404</li>
     <li><a href="{% url 'index' %}man/nvidia-smi.1.foo">nvidia-smi.1.foo</a> &rarr; 404</li>
 </ul>
+
+<h2>Test cases for package filter</h2>
+<ul>
+    <li><a href="{% url 'index' %}man/nvidia-utils/nvidia-smi.en">nvidia-utils/nvidia-smi.en</a></li>
+    <li><a href="{% url 'index' %}man/nvidia-340xx-utils/nvidia-smi.en">nvidia-340xx-utils/nvidia-smi.en</a></li>
+    <li><a href="{% url 'index' %}man/nvidia-utils/nvidia-smi.cs">nvidia-utils/nvidia-smi.cs</a> &rarr; <a href="{% url 'index' %}man/nvidia-utils/nvidia-smi.en">nvidia-utils/nvidia-smi.en</a></li>
+    <li><a href="{% url 'index' %}man/nvidia-340xx-utils/nvidia-smi.cs">nvidia-340xx-utils/nvidia-smi.cs</a> &rarr; <a href="{% url 'index' %}man/nvidia-340xx-utils/nvidia-smi.cs">nvidia-utils/nvidia-340xx-smi.en</a></li>
+    <li><a href="{% url 'index' %}man/foo/nvidia-smi.cs">foo/nvidia-smi.cs</a> &rarr; 404</li>
+    <li><a href="{% url 'index' %}man/foo/nvidia-smi.en">foo/nvidia-smi.en</a> &rarr; 404</li>
+</ul>
 </p>

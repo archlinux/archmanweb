@@ -208,9 +208,9 @@ def try_redirect_or_404(request, repo, pkgname, man_name, man_section, lang, out
     #
     # Note: if page "foo" does not exist in language "bar", we'll get "foo.bar" as the
     # man_name, so we need to re-parse the URL and force the default language.
-    man_name, man_section, parsed_lang = _parse_man_name_section_lang(name_section_lang, force_lang="en")
-    if parsed_lang == "en":
-        url = reverse_man_url(repo, pkgname, man_name, man_section, "en", output_type)
+    parsed_name, parsed_section, parsed_lang = _parse_man_name_section_lang(name_section_lang, force_lang="en")
+    if (parsed_name != man_name or parsed_section != man_section) and parsed_lang == "en":
+        url = reverse_man_url(repo, pkgname, parsed_name, parsed_section, "en", output_type)
         return HttpResponseRedirect(url)
     # otherwise page does not exist in en -> 404
 
