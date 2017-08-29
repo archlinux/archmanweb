@@ -112,6 +112,14 @@ def listing(request, *, repo=None, pkgname=None):
     }
     return render(request, "listing.html", context)
 
+def _get_package_filter(repo, pkgname):
+    if repo is None and pkgname is None:
+        return {}
+    elif repo is None:
+        return {"package__name": pkgname}
+    else:
+        return {"package__name": pkgname, "package__repo": repo}
+
 # Maybe all these checks should include repo/pkgname when specified in the URL,
 # but this seems enough to parse the URL correctly. debiman actually only checks
 # if given section/lang is in some static set.
@@ -177,21 +185,11 @@ def _parse_man_name_section_lang(url_snippet, *, force_lang=None):
 
 def try_redirect_or_404(request, repo, pkgname, man_name, man_section, lang, output_type, name_section_lang):
     if man_section is None:
-        if repo is None and pkgname is None:
-            query = SymbolicLink.objects.filter(from_name=man_name, lang=lang)
-        elif repo is None:
-            query = SymbolicLink.objects.filter(from_name=man_name, lang=lang, package__name=pkgname)
-        else:
-            query = SymbolicLink.objects.filter(from_name=man_name, lang=lang, package__name=pkgname, package__repo=repo)
+        query = SymbolicLink.objects.filter(from_name=man_name, lang=lang, **_get_package_filter(repo, pkgname))
         # TODO: we're trying to guess the newest version, but lexical ordering is too weak
         query = query.order_by("from_section", "-package__version")[:1]
     else:
-        if repo is None and pkgname is None:
-            query = SymbolicLink.objects.filter(from_section=man_section, from_name=man_name, lang=lang)
-        elif repo is None:
-            query = SymbolicLink.objects.filter(from_section=man_section, from_name=man_name, lang=lang, package__name=pkgname)
-        else:
-            query = SymbolicLink.objects.filter(from_section=man_section, from_name=man_name, lang=lang, package__name=pkgname, package__repo=repo)
+        query = SymbolicLink.objects.filter(from_section=man_section, from_name=man_name, lang=lang, **_get_package_filter(repo, pkgname))
         # TODO: we're trying to guess the newest version, but lexical ordering is too weak
         query = query.order_by("-package__version")[:1]
 
@@ -240,21 +238,11 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
 
     # find the man page and package containing it
     if man_section is None:
-        if repo is None and pkgname is None:
-            query = ManPage.objects.filter(name=man_name, lang=lang)
-        elif repo is None:
-            query = ManPage.objects.filter(name=man_name, lang=lang, package__name=pkgname)
-        else:
-            query = ManPage.objects.filter(name=man_name, lang=lang, package__name=pkgname, package__repo=repo)
+        query = ManPage.objects.filter(name=man_name, lang=lang, **_get_package_filter(repo, pkgname))
         # TODO: we're trying to guess the newest version, but lexical ordering is too weak
         query = query.order_by("section", "-package__version")[:1]
     else:
-        if repo is None and pkgname is None:
-            query = ManPage.objects.filter(section=man_section, name=man_name, lang=lang)
-        elif repo is None:
-            query = ManPage.objects.filter(section=man_section, name=man_name, lang=lang, package__name=pkgname)
-        else:
-            query = ManPage.objects.filter(section=man_section, name=man_name, lang=lang, package__name=pkgname, package__repo=repo)
+        query = ManPage.objects.filter(section=man_section, name=man_name, lang=lang, **_get_package_filter(repo, pkgname))
         # TODO: we're trying to guess the newest version, but lexical ordering is too weak
         query = query.order_by("-package__version")[:1]
 
