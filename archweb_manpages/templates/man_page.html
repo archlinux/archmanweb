@@ -2,6 +2,8 @@
 {% load static %}
 {% load reverse_man_url %}
 
+{% block title %}{{ man.name }}({{ man.section }}) — Arch manual pages{% endblock %}
+
 {% block head %}
     <link rel="stylesheet" type="text/css" href="{% static 'archweb_manpages/man_page.css' %}" />
     {% for lang in other_languages %}
