@@ -1,0 +1,33 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="{{ lang | default:'en' }}">
+    <head>
+        <meta charset="UTF-8">
+        <title>{% block title %}Arch manual pages{% endblock %}</title>
+        <link rel="stylesheet" type="text/css" href="{% static 'archweb_manpages/base.css' %}" />
+        {% block head %}
+        {% endblock %}
+    </head>
+    <body>
+        <header>
+            <h1><a href="{% url 'index' %}">Arch man pages</a></h1>
+        </header>
+        <main id="content">
+            {% block content %}
+            <article id="content-left">
+                {% block content_left %}
+                {% endblock %}
+            </article>
+            <aside id="content-right">
+                {% block content_right %}
+                {% endblock %}
+            </aside>
+            {% endblock %}
+        </main>
+        <footer>
+            {% block footer %}
+            {% endblock %}
+        </footer>
+    </body>
+</html>

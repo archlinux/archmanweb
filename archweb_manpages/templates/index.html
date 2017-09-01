@@ -1,3 +1,8 @@
+{% extends "base.html" %}
+
+{% block content %}
+<article>
+
 <h1>About</h1>
 <p>
 This website indexes all man pages from the <a htref="https://www.archlinux.org/packages/">Arch official repositories</a>.
@@ -106,3 +111,6 @@ Other interesting manuals (at least for me):
     <li><a href="{% url 'index' %}man/foo/nvidia-smi.en">foo/nvidia-smi.en</a> &rarr; 404</li>
 </ul>
 </p>
+
+</article>
+{% endblock %}

@@ -1,37 +1,55 @@
+{% extends "base.html" %}
 {% load static %}
 {% load reverse_man_url %}
 
-<link rel="stylesheet" type="text/css" href="{% static 'archweb_manpages/style.css' %}" />
-
-<p>Package containing this man page:
-<a href="https://www.archlinux.org/packages/{{ pkg.repo }}/{{ pkg.arch }}/{{ pkg.name }}/">{{ pkg.repo }}/{{ pkg.name }}</a>
-(version {{ pkg.version }})</p>
-
-{% if other_versions %}
-    <p>In other packages:</p>
-    <ul>
-    {% for info in other_versions %}
-        <li><a href="{% reverse_man_url info.repo info.pkgname info.manname info.mansection lang url_output_type %}">{{ info.repo }}/{{ info.pkgname }}: {{ info.manname }}({{ info.mansection }})</a></li>
-    {% endfor %}
-    </ul>
-{% endif %}
-
-{% if other_languages %}
-    <p>In other languages:</p>
-    <ul>
+{% block head %}
+    <link rel="stylesheet" type="text/css" href="{% static 'archweb_manpages/style.css' %}" />
     {% for lang in other_languages %}
-        <li><a href="{% reverse_man_url '' '' man.name man.section lang url_output_type %}">{{ lang }}</a></li>
+        <link rel="alternate" href="{% reverse_man_url '' '' man.name man.section lang url_output_type %}" hreflang="{{ lang }}">
     {% endfor %}
-    </ul>
-{% endif %}
+{% endblock %}
 
-{% if other_sections %}
-    <p>In other sections:</p>
-    <ul>
-    {% for section in other_sections %}
-    <li><a href="{% reverse_man_url '' '' man.name section url_lang url_output_type %}">{{ man.name }}({{ section }})</a></li>
-    {% endfor %}
-    </ul>
-{% endif %}
+{% block content_left %}
+    <p>Package containing this man page:
+    <a href="https://www.archlinux.org/packages/{{ pkg.repo }}/{{ pkg.arch }}/{{ pkg.name }}/">{{ pkg.repo }}/{{ pkg.name }}</a>
+    (version {{ pkg.version }})</p>
 
-{{ man.html | safe }}
+    <div class="man-page-content">
+        {{ man.html | safe }}
+    </div>
+{% endblock %}
+
+{% block content_right %}
+<nav class="other-packages">
+    {% if other_versions %}
+        <p>In other packages:</p>
+        <ul>
+        {% for info in other_versions %}
+            <li><a href="{% reverse_man_url info.repo info.pkgname info.manname info.mansection lang url_output_type %}">{{ info.repo }}/{{ info.pkgname }}: {{ info.manname }}({{ info.mansection }})</a></li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+</nav>
+
+<nav class="other-languages">
+    {% if other_languages %}
+        <p>In other languages:</p>
+        <ul>
+        {% for lang in other_languages %}
+            <li><a href="{% reverse_man_url '' '' man.name man.section lang url_output_type %}">{{ lang }}</a></li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+</nav>
+
+<nav class="other-sections">
+    {% if other_sections %}
+        <p>In other sections:</p>
+        <ul>
+        {% for section in other_sections %}
+        <li><a href="{% reverse_man_url '' '' man.name section url_lang url_output_type %}">{{ man.name }}({{ section }})</a></li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+</nav>
+{% endblock %}

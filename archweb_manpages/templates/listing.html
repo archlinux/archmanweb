@@ -1,6 +1,11 @@
+{% extends "base.html" %}
 {% load query_transform %}
 {% load reverse_man_url %}
 
+{% block content %}
+<article>
+
+<section>
 {% if pkg %}
     <p>The package
     <a href="https://www.archlinux.org/packages/{{ pkg.repo }}/{{ pkg.arch }}/{{ pkg.name }}/">{{ pkg.repo }}/{{ pkg.name }}</a>
@@ -21,7 +26,7 @@
 {% endif %}
 
 {% if man_pages.paginator.num_pages != 1 %}
-    <div class="pagination">
+    <nav class="pagination">
         <span class="page-links">
             {% if man_pages.number != 1 %}
                 <a href="?{% query_transform request page=1 %}">first</a>
@@ -43,10 +48,12 @@
                 <a href="?{% query_transform request page=man_pages.paginator.num_pages %}">last</a>
             {% endif %}
         </span>
-    </div>
+    </nav>
 {% endif %}
+</section>
 
 {% if pkg and symlinks %}
+    <section>
     <p>...and these symbolic links:</p>
     <ul>
     {% for symlink in symlinks %}
@@ -60,7 +67,7 @@
     </ul>
 
     {% if symlinks.paginator.num_pages != 1 %}
-        <div class="pagination">
+        <nav class="pagination">
             <span class="page-links">
                 {% if symlinks.number != 1 %}
                     <a href="?{% query_transform request page_symlinks=1 %}">first</a>
@@ -82,6 +89,10 @@
                     <a href="?{% query_transform request page_symlinks=symlinks.paginator.num_pages %}">last</a>
                 {% endif %}
             </span>
-        </div>
+        </nav>
     {% endif %}
+    </section>
 {% endif %}
+
+</article>
+{% endblock %}
