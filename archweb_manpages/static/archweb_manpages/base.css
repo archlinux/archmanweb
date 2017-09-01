@@ -18,10 +18,6 @@ article.single-column-content {
     width: 100%;
 }
 
-section.man-page-content {
-    width: 80ch;
-}
-
 .listing-multicolumn-wrapper ul {
     column-width: 20em;
     column-gap: 1.5em;

@@ -1,4 +1,75 @@
-table.head, table.foot { width: 100%; }
-td.head-rtitle, td.foot-os { text-align: right; }
-td.head-vol { text-align: center; }
-div.Pp { margin: 1ex 0ex; }
+/*
+ * Basic style
+ */
+
+.man-page-content {
+    width: 80ch;
+}
+
+.man-page-content div.manual-text {
+    text-align: justify;
+    margin-left: 5ex;
+}
+
+.man-page-content div.manual-text * {
+    /* don't align nested elements */
+    text-align: initial;
+}
+
+
+/*
+ * Style for mandoc elements
+ */
+
+/* header/footer tables */
+.man-page-content table.head {
+    width: 100%;
+    border-bottom: 1px dotted #808080;
+    margin-bottom: 1em;
+}
+.man-page-content table.foot {
+    width: 100%;
+    border-top: 1px dotted #808080;
+    margin-top: 1em;
+}
+.man-page-content td.head-rtitle,
+.man-page-content td.foot-os {
+    text-align: right;
+}
+.man-page-content td.head-vol {
+    text-align: center;
+}
+
+/* paragraph separator div */
+.man-page-content div.Pp {
+    margin: 1ex 0ex;
+}
+
+/* font sizes */
+.man-page-content h1 {
+    font-size: 1.25em;
+    margin-left: -4ex;
+}
+.man-page-content h2 {
+    font-size: 1.1em;
+    margin-left: -2ex;
+}
+
+/* fancy anchor links */
+.man-page-content a.selflink {
+    color: inherit;
+    text-decoration: inherit;
+    border-bottom: thin dotted;
+}
+.man-page-content a.selflink:only-child:hover:after {
+    /* :only-child is necessary, otherwise the following text would be shifted */
+    /* (alternatively we could match only links inside <h1> etc. */
+    content: " ¶";
+}
+
+/* tables are generally not aligned */
+.man-page-content table td {
+    min-width: 7em;
+}
+
+/* TODO: OpenBSD has many semantic rules in their stylesheets */
