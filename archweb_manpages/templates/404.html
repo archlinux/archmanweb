@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <article>
+        <h1>404 — Page not found</h1>
+        {% if exception %}
+            {{ exception }}
+        {% else %}
+            Sorry, the page you have requested does not exist.
+        {% endif %}
+    <article>
+{% endblock %}
