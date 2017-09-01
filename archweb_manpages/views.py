@@ -297,6 +297,7 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
         db_man.save()
 
     context = {
+        "lang": lang,  # used in base.html
         "url_repo": repo,
         "url_pkgname": pkgname,
         "url_lang": url_lang,
