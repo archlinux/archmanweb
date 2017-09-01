@@ -3,7 +3,7 @@
 {% load reverse_man_url %}
 
 {% block head %}
-    <link rel="stylesheet" type="text/css" href="{% static 'archweb_manpages/style.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'archweb_manpages/man_page.css' %}" />
     {% for lang in other_languages %}
         <link rel="alternate" href="{% reverse_man_url '' '' man.name man.section lang url_output_type %}" hreflang="{{ lang }}">
     {% endfor %}
@@ -14,9 +14,9 @@
     <a href="https://www.archlinux.org/packages/{{ pkg.repo }}/{{ pkg.arch }}/{{ pkg.name }}/">{{ pkg.repo }}/{{ pkg.name }}</a>
     (version {{ pkg.version }})</p>
 
-    <div class="man-page-content">
+    <section class="man-page-content">
         {{ man.html | safe }}
-    </div>
+    </section>
 {% endblock %}
 
 {% block content_right %}

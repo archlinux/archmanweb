@@ -1,0 +1,28 @@
+main#content {
+    display: flex;
+}
+
+#content-left {
+    display: block;
+    order: 1;
+}
+
+#content-right {
+    display: block;
+    order: 2;
+    margin-left: 2em;
+}
+
+/* needs to be explicit because the main#content has display:flex */
+article.single-column-content {
+    width: 100%;
+}
+
+section.man-page-content {
+    width: 80ch;
+}
+
+.listing-multicolumn-wrapper ul {
+    column-width: 20em;
+    column-gap: 1.5em;
+}

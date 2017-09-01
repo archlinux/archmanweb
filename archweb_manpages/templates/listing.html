@@ -3,9 +3,9 @@
 {% load reverse_man_url %}
 
 {% block content %}
-<article>
+<article class="single-column-content">
 
-<section>
+<section class="listing-multicolumn-wrapper">
 {% if pkg %}
     <p>The package
     <a href="https://www.archlinux.org/packages/{{ pkg.repo }}/{{ pkg.arch }}/{{ pkg.name }}/">{{ pkg.repo }}/{{ pkg.name }}</a>
@@ -53,7 +53,7 @@
 </section>
 
 {% if pkg and symlinks %}
-    <section>
+    <section class="listing-multicolumn-wrapper">
     <p>...and these symbolic links:</p>
     <ul>
     {% for symlink in symlinks %}
