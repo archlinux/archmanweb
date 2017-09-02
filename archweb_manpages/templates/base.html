@@ -4,8 +4,9 @@
 <html lang="{{ lang | default:'en' }}">
     <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>{% block title %}Arch manual pages{% endblock %}</title>
-        <link rel="stylesheet" type="text/css" href="{% static 'archweb_manpages/base.css' %}" />
+        <link rel="stylesheet" type="text/css" href="{% static 'archweb_manpages/base.css' %}">
         {% block head %}
         {% endblock %}
     </head>
