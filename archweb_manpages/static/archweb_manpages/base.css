@@ -7,7 +7,7 @@ main#content {
     order: 1;
 }
 
-#content-right {
+#sidebar {
     display: block;
     order: 2;
     margin-left: 2em;
