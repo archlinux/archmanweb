@@ -11,8 +11,9 @@
     margin-left: 5ex;
 }
 
-.man-page-content div.manual-text * {
-    /* don't align nested elements */
+.man-page-content div.manual-text table,
+.man-page-content div.manual-text dl {
+    /* don't align elements, which are usually nested */
     text-align: initial;
 }
 
