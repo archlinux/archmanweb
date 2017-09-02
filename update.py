@@ -139,6 +139,10 @@ def update_man_pages(finder, updated_pkgs):
                 # django complains, the DBMS would drop it anyway
                 content = content.replace("\0", "")
 
+                if not content:
+                    logger.warning("Skipping empty man page: {}".format(path))
+                    continue
+
                 paths.add(path)
                 result = ManPage.objects.filter(package_id=db_pkg.id, path=path)
                 assert len(result) in {0, 1}
