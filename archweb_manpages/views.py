@@ -86,9 +86,10 @@ def listing(request, *, repo=None, pkgname=None):
         symlinks_sorting_columns = []
         for c in sorting_columns:
             if "name" in c:
-                symlinks_sorting_columns.append(c.replace("name", "from_name"))
+                c = c.replace("name", "from_name")
             elif "section" in c:
-                symlinks_sorting_columns.append(c.replace("section", "from_section"))
+                c = c.replace("section", "from_section")
+            symlinks_sorting_columns.append(c)
         symlinks = SymbolicLink.objects.order_by( *symlinks_sorting_columns ).filter(package__name=pkgname)
         symlinks_count = SymbolicLink.objects.filter(package__name=pkgname).count()
     else:
