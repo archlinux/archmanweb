@@ -7,7 +7,6 @@ import tarfile
 import gzip
 
 import requests
-import chardet
 import pycman
 import pyalpm
 
@@ -39,18 +38,6 @@ Include = /etc/pacman.d/mirrorlist
 """
 
 MANDIR = "usr/share/man/"
-
-def decode(text):
-    CHARSETS = ("utf8", "ascii", "iso-8859-1", "iso-8859-9", "iso-8859-15", "cp1250", "cp1252")
-    for charset in CHARSETS:
-        try:
-            return text.decode(charset)
-        except UnicodeDecodeError:
-            pass
-
-    # fall back to chardet and errors="replace"
-    encoding = chardet.detect(text)["encoding"]
-    return text.decode(encoding, errors="replace")
 
 class ManPagesFinder:
     def __init__(self, tmpdir):
@@ -178,6 +165,9 @@ class ManPagesFinder:
             raise Exception("Pycman transaction failed: {}".format(t))
 
     def get_man_contents(self, pkg, *, keep_tarball=True):
+        """
+        Note: the content is yielded as `bytes`, its decoding is not a priori known
+        """
         # first check if there are any man files at all to avoid useless downloads
         man_files = list(self.get_man_files(pkg))
         if not man_files:
@@ -202,10 +192,6 @@ class ManPagesFinder:
                 if file.endswith(".gz"):
                     file = file[:-3]
                     man = gzip.decompress(man)
-                # TODO: use the lang detected from the man path as a hint (see evim.1.ru.KOI8-R)
-                man = decode(man)
-                # django complains, the DBMS would drop it anyway
-                man = man.replace("\0", "")
                 yield "file", file, man
         t.close()
 

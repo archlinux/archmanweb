@@ -5,6 +5,7 @@ import os.path
 import logging
 from pathlib import PurePath
 
+import chardet
 import pyalpm
 
 from finder import MANDIR, ManPagesFinder
@@ -21,6 +22,25 @@ logger = logging.getLogger(__name__)
 
 class UnknownManPath(Exception):
     pass
+
+
+def decode(text, *, encoding_hint=None):
+    CHARSETS = ["utf-8", "ascii", "iso-8859-1", "iso-8859-9", "iso-8859-15", "cp1250", "cp1252"]
+    if encoding_hint is not None:
+        CHARSETS.insert(0, encoding_hint)
+
+    for charset in CHARSETS:
+        try:
+            return text.decode(charset)
+        except UnicodeDecodeError:
+            pass
+        except LookupError:
+            # ignore invalid encoding_hint
+            pass
+
+    # fall back to chardet and errors="replace"
+    encoding = chardet.detect(text)["encoding"]
+    return text.decode(encoding, errors="replace")
 
 
 def parse_man_path(path):
@@ -107,6 +127,17 @@ def update_man_pages(finder, updated_pkgs):
                 if not man_section:
                     logger.warning("Skipping path with empty section number: {}".format(path))
                     continue
+
+                # extract the encoding hint (see e.g. evim.1.ru.KOI8-R)
+                if "." in man_lang:
+                    man_lang, encoding_hint = man_lang.split(".", maxsplit=1)
+                else:
+                    encoding_hint = None
+
+                # decode the content
+                content = decode(content, encoding_hint=encoding_hint)
+                # django complains, the DBMS would drop it anyway
+                content = content.replace("\0", "")
 
                 paths.add(path)
                 result = ManPage.objects.filter(package_id=db_pkg.id, path=path)
