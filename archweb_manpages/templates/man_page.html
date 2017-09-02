@@ -22,6 +22,17 @@
 {% endblock %}
 
 {% block content_right %}
+<details>
+    <summary>Table of contents</summary>
+    <nav class="toc">
+        <ul>
+        {% for h in headings %}
+            <li><a href="#{{ h.id }}">{{ h.title }}</a></li>
+        {% endfor %}
+        </ul>
+    </nav>
+</details>
+
 <nav class="other-packages">
     {% if other_versions %}
         <p>In other packages:</p>

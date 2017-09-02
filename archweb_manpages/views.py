@@ -6,7 +6,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Count
 
 from .models import Package, ManPage, SymbolicLink
-from .utils import reverse_man_url, postprocess
+from .utils import reverse_man_url, postprocess, extract_headings
 
 def index(request):
     count_man_pages = ManPage.objects.count()
@@ -297,6 +297,9 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
         db_man.html = postprocess(p.stdout, lang)
         db_man.save()
 
+    # this is pretty fast, no caching
+    headings = extract_headings(db_man.html)
+
     context = {
         "lang": lang,  # used in base.html
         "url_repo": repo,
@@ -305,6 +308,7 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
         "url_output_type": url_output_type,
         "pkg": db_pkg,
         "man": db_man,
+        "headings": headings,
         "other_versions": other_versions,
         "other_languages": sorted(other_languages),
         "other_sections": sorted(other_sections),

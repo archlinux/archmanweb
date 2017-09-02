@@ -56,12 +56,26 @@ def postprocess_bs(html, lang):
     # return the content of the <body> tag
     return soup.body.decode_contents(formatter="html")
 
+_xref_pattern = re.compile(r"\<(?P<tag>b|i|strong|em|mark)\>"
+                           r"(?P<man_name>[A-Za-z0-9@._+\-:\[\]]+)"
+                           r"\<\/\1\>"
+                           r"\((?P<section>\d[a-z]{,3})\)")
 def postprocess(html, lang):
-    xref_pattern = re.compile(r"\<(?P<tag>b|i|strong|em|mark)\>"
-                              r"(?P<man_name>[A-Za-z0-9@._+\-:\[\]]+)"
-                              r"\<\/\1\>"
-                              r"\((?P<section>\d[a-z]{,3})\)")
-    new_html = xref_pattern.sub("<a href='" + reverse("index") + "man/" + r"\g<man_name>.\g<section>." + lang +
+    new_html = _xref_pattern.sub("<a href='" + reverse("index") + "man/" + r"\g<man_name>.\g<section>." + lang +
                                         "'>\g<man_name>(\g<section>)</a>",
                                 html)
     return new_html
+
+_norm_pattern = re.compile(r"\s+")
+_headings_pattern = re.compile(r"\<h1[^\>]*\>[^\<\>]*"
+                               r"\<a class=(\"|\')selflink(\"|\') href=(\"|\')#(?P<id>[A-Za-z0-9\-_\.]+)(\"|\')\>"
+                               r"(?P<title>.+?)"
+                               r"\<\/a\>[^\<\>]*"
+                               r"\<\/h1\>", re.DOTALL)
+def extract_headings(html):
+    def normalize(title):
+        return _norm_pattern.sub(" ", title)
+    result = []
+    for match in _headings_pattern.finditer(html):
+        result.append(dict(id=match.group("id"), title=normalize(match.group("title"))))
+    return result
