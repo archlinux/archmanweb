@@ -21,8 +21,10 @@ def index(request):
     }
     return render(request, "index.html", context)
 
-def dev(request):
-    return render(request, "dev.html", {})
+def simple_view(request, *, template_name):
+    if template_name not in {"about", "dev"}:
+        raise Http404()
+    return render(request, "{}.html".format(template_name), {})
 
 def paginate(request, url_param, query, limit):
     paginator = Paginator(query, limit)

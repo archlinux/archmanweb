@@ -1,0 +1,50 @@
+{% extends "index.html" %}
+
+{% block content %}
+<article>
+
+<h1>About</h1>
+
+<p>
+    This website was created for the <a href="https://wiki.archlinux.org/index.php/Template:Man">man template</a>
+    on the Arch wiki. Other sites which could be used for linking either don't provide the same manuals as Arch
+    packages, or don't have suitable URL addressing scheme, or have other issues. Therefore we decided to build
+    a new service to meet our requirements:
+</p>
+<ol>
+    <li>All man pages from official Arch packages are available. Old versions and permalinks are not necessary.</li>
+    <li>Functionality does not require Javascript.</li>
+    <li>Pages are addressable by their name and section, both occurring exactly once in the URL to avoid
+        problems with pages such as <a href="{% url 'index' %}man/ar.1">ar(1)</a> and
+        <a href="{% url 'index' %}man/ar.1p">ar(1p)</a>.
+        </li>
+    <li>Human-readable subsection anchors.</li>
+    <li>The page should clearly indicate the Arch package version containing the page.</li>
+</ol>
+<p>
+    See the <a href="https://wiki.archlinux.org/index.php/Template_talk:Man#Sources">original discussion</a>
+    for details.
+</p>
+
+<p>
+    We used a dynamic approach instead of building a website consisting of completely static pages. The main
+    building blocks are the <a href="https://www.djangoproject.com/">Django web framework</a>, the
+    <a href="https://www.postgresql.org/">PostgreSQL</a> database server, the <code>mandoc</code> tool from
+    the <a href="http://mdocml.bsd.lv/">mandoc toolset</a> for the conversion to HTML and the
+    <a href="https://github.com/archlinux/pyalpm">pyalpm</a> for data extraction from the Arch repositories.
+    The code is available in the <a href="https://github.com/lahwaacz/archweb_manpages">lahwaacz/archweb_manpages</a>
+    repository at GitHub.
+</p>
+
+<p>
+    Overall, this approach allows us to provide the following features without rebuilding the whole website
+    from scratch:
+</p>
+<ul>
+    <li>Listings with custom filters and orderings.</li>
+    <li>Links to other versions of the same manual provided by different packages.</li>
+    <li>Links to similar manuals available in other sections or languages.</li>
+</ul>
+
+</article>
+{% endblock %}
