@@ -1,3 +1,18 @@
+header > h1 {
+    display: inline;
+    margin-right: 3em;
+    font-size: 1.25em;
+}
+header > a {
+    font-weight: bold;
+    font-size: 1.25em;
+    margin-right: 0.5em;
+    text-decoration: none;
+}
+header > a.selected {
+    color: inherit;
+}
+
 main#content {
     display: flex;
 }

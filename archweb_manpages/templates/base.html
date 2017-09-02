@@ -12,7 +12,11 @@
     </head>
     <body>
         <header>
-            <h1><a href="{% url 'index' %}">Arch manual pages</a></h1>
+            <h1>Arch manual pages</h1>
+            {% url 'index' as url_index %}
+            <a href="{{ url_index }}" {% if request.path == url_index %}class="selected"{% endif %}>Home</a>
+            {% url 'dev' as url_dev %}
+            <a href="{{ url_dev }}" {% if request.path == url_dev %}class="selected"{% endif %}>Dev</a>
         </header>
         <main id="content">
             {% block content %}
