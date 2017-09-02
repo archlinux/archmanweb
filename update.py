@@ -122,6 +122,9 @@ def update_man_pages(finder, updated_pkgs):
                     db_man = result[0]
                 db_man.content = content
                 db_man.html = None
+
+                # validate and save
+                db_man.full_clean()
                 # TODO: this might still fail if there are multiple foo.1 in different directories and same language
                 db_man.save()
 
@@ -178,6 +181,9 @@ def update_man_pages(finder, updated_pkgs):
                     db_link = query[0]
                 db_link.to_section = target_section
                 db_link.to_name = target_name
+
+                # validate and save
+                db_link.full_clean()
                 db_link.save()
 
             else:

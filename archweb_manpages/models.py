@@ -8,7 +8,6 @@ class Package(models.Model):
     version = models.TextField()
     arch = models.TextField()
 
-    # WTF, django does not support compound primary keys
     class Meta:
         unique_together = (
             ('name', 'repo'),
@@ -65,6 +64,10 @@ class ManPage(models.Model):
             raise ValidationError("Man name cannot be empty.")
         if not self.section:
             raise ValidationError("Man section cannot be empty.")
+        if "." in self.section:
+            raise ValidationError("Man section cannot contain dots.")
+        if "." in self.lang:
+            raise ValidationError("Language tag cannot contain dots.")
 
 class SymbolicLink(models.Model):
     # package containing the symlink
