@@ -60,7 +60,7 @@
         <p>In other sections:</p>
         <ul>
         {% for section in other_sections %}
-        <li><a href="{% reverse_man_url '' '' man.name section url_lang url_output_type %}">{{ man.name }}({{ section }})</a></li>
+            <li><a href="{% reverse_man_url '' '' man.name section url_lang url_output_type %}">{{ man.name }}({{ section }})</a></li>
         {% endfor %}
         </ul>
     {% endif %}
