@@ -6,7 +6,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Count
 
 from .models import Package, ManPage, SymbolicLink
-from .utils import reverse_man_url
+from .utils import reverse_man_url, postprocess
 
 def index(request):
     count_man_pages = ManPage.objects.count()
@@ -294,7 +294,7 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
         cmd = "mandoc -T html -O fragment,man={}".format(url_pattern)
         p = subprocess.run(cmd, shell=True, check=True, input=db_man.content, encoding="utf-8", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         assert p.stdout
-        db_man.html = p.stdout
+        db_man.html = postprocess(p.stdout, lang)
         db_man.save()
 
     context = {
