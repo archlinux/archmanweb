@@ -143,6 +143,10 @@ def update_man_pages(finder, updated_pkgs):
                 result = ManPage.objects.filter(package_id=db_pkg.id, path=path)
                 assert len(result) in {0, 1}
                 if len(result) == 0:
+                    # skip man pages with duplicate encoding
+                    if ManPage.objects.filter(package_id=db_pkg.id, name=man_name, section=man_section, lang=man_lang).count() > 0:
+                        logger.debug("Skipping man page with duplicate encoding: {}".format(path))
+                        continue
                     db_man = ManPage()
                     db_man.package_id = db_pkg.id
                     db_man.path = path
