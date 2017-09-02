@@ -21,6 +21,9 @@ def index(request):
     }
     return render(request, "index.html", context)
 
+def dev(request):
+    return render(request, "dev.html", {})
+
 def paginate(request, url_param, query, limit):
     paginator = Paginator(query, limit)
     page = request.GET.get(url_param)
