@@ -109,3 +109,5 @@ class SymbolicLink(models.Model):
         # either the section or name must be different
         if self.from_section == self.to_section and self.from_name == self.to_name:
             raise ValidationError("Symbolic link cannot be to the same name and section.")
+        if "." in self.lang:
+            raise ValidationError("Language tag cannot contain dots.")

@@ -203,6 +203,10 @@ def update_man_pages(finder, updated_pkgs):
                     logger.warning("Skipping symlink from {} to {} (the base name is the same).".format(source, target))
                     continue
 
+                # drop encoding from the lang (ru.KOI8-R)
+                if "." in source_lang:
+                    source_lang, _ = source_lang.split(".", maxsplit=1)
+
                 # save into database
                 query = SymbolicLink.objects.filter(package_id=db_pkg.id, lang=source_lang, from_section=source_section, from_name=source_name)
                 assert len(query) in {0, 1}
