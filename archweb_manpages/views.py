@@ -145,8 +145,6 @@ def _exists_name_section_language(name, section, lang):
     return ManPage.objects.filter(name=name, section=section, lang=lang).exists() or \
            SymbolicLink.objects.filter(from_name=name, from_section=section, lang=lang).exists()
 
-# TODO: This doesn't cover languages with explicit encoding, but only utf8 should be allowed
-# anyway, because that's what we serve. Adjust the database and update script as necessary.
 def _parse_man_name_section_lang(url_snippet, *, force_lang=None):
     # Man page names can contain dots, so we need to parse from the right. There are still
     # some ambiguities for shortcuts like gimp-2.8 (shortcut for gimp-2.8(1)), jclient.pl
