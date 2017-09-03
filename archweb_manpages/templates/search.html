@@ -1,6 +1,7 @@
 {% extends "index.html" %}
 {% load query_transform %}
 {% load reverse_man_url %}
+{% load pagination_links %}
 
 {% block current_search_term %}{{ request.GET.q }}{% endblock %}
 
@@ -22,29 +23,7 @@
     <ol>
 
     {% if man_results.paginator.num_pages != 1 %}
-        <nav class="pagination">
-            <span class="page-links">
-                {% if man_results.number != 1 %}
-                    <a href="?{% query_transform request page_man=1 %}">first</a>
-                {% endif %}
-
-                {% if man_results.has_previous %}
-                    <a href="?{% query_transform request page_man=man_results.previous_page_number %}">previous</a>
-                {% endif %}
-
-                <span class="current">
-                    page {{ man_results.number }} of {{ man_results.paginator.num_pages }}
-                </span>
-
-                {% if man_results.has_next %}
-                    <a href="?{% query_transform request page_man=man_results.next_page_number %}">next</a>
-                {% endif %}
-
-                {% if man_results.number != man_results.paginator.num_pages %}
-                    <a href="?{% query_transform request page_man=man_results.paginator.num_pages %}">last</a>
-                {% endif %}
-            </span>
-        </nav>
+        {% pagination_links request man_results 'page_man' %}
     {% endif %}
 </section>
 
@@ -59,29 +38,7 @@
     <ol>
 
     {% if pkg_results.paginator.num_pages != 1 %}
-        <nav class="pagination">
-            <span class="page-links">
-                {% if pkg_results.number != 1 %}
-                    <a href="?{% query_transform request page_pkg=1 %}">first</a>
-                {% endif %}
-
-                {% if pkg_results.has_previous %}
-                    <a href="?{% query_transform request page_pkg=pkg_results.previous_page_number %}">previous</a>
-                {% endif %}
-
-                <span class="current">
-                    page {{ pkg_results.number }} of {{ pkg_results.paginator.num_pages }}
-                </span>
-
-                {% if pkg_results.has_next %}
-                    <a href="?{% query_transform request page_pkg=pkg_results.next_page_number %}">next</a>
-                {% endif %}
-
-                {% if pkg_results.number != pkg_results.paginator.num_pages %}
-                    <a href="?{% query_transform request page_pkg=pkg_results.paginator.num_pages %}">last</a>
-                {% endif %}
-            </span>
-        </nav>
+        {% pagination_links request pkg_results 'page_pkg' %}
     {% endif %}
 </section>
 

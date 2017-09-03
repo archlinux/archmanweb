@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load query_transform %}
 {% load reverse_man_url %}
+{% load pagination_links %}
 
 {% block head %}
     <meta name="robots" value="noindex">
@@ -30,29 +31,7 @@
 {% endif %}
 
 {% if man_pages.paginator.num_pages != 1 %}
-    <nav class="pagination">
-        <span class="page-links">
-            {% if man_pages.number != 1 %}
-                <a href="?{% query_transform request page=1 %}">first</a>
-            {% endif %}
-
-            {% if man_pages.has_previous %}
-                <a href="?{% query_transform request page=man_pages.previous_page_number %}">previous</a>
-            {% endif %}
-
-            <span class="current">
-                page {{ man_pages.number }} of {{ man_pages.paginator.num_pages }}
-            </span>
-
-            {% if man_pages.has_next %}
-                <a href="?{% query_transform request page=man_pages.next_page_number %}">next</a>
-            {% endif %}
-
-            {% if man_pages.number != man_pages.paginator.num_pages %}
-                <a href="?{% query_transform request page=man_pages.paginator.num_pages %}">last</a>
-            {% endif %}
-        </span>
-    </nav>
+    {% pagination_links request man_pages 'page' %}
 {% endif %}
 </section>
 
@@ -71,29 +50,7 @@
     </ul>
 
     {% if symlinks.paginator.num_pages != 1 %}
-        <nav class="pagination">
-            <span class="page-links">
-                {% if symlinks.number != 1 %}
-                    <a href="?{% query_transform request page_symlinks=1 %}">first</a>
-                {% endif %}
-
-                {% if symlinks.has_previous %}
-                    <a href="?{% query_transform request page_symlinks=symlinks.previous_page_number %}">previous</a>
-                {% endif %}
-
-                <span class="current">
-                    page {{ symlinks.number }} of {{ symlinks.paginator.num_pages }}
-                </span>
-
-                {% if symlinks.has_next %}
-                    <a href="?{% query_transform request page_symlinks=symlinks.next_page_number %}">next</a>
-                {% endif %}
-
-                {% if symlinks.number != symlinks.paginator.num_pages %}
-                    <a href="?{% query_transform request page_symlinks=symlinks.paginator.num_pages %}">last</a>
-                {% endif %}
-            </span>
-        </nav>
+        {% pagination_links request symlinks 'page_symlinks' %}
     {% endif %}
     </section>
 {% endif %}
