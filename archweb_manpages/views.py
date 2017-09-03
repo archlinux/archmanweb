@@ -263,37 +263,42 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
         return HttpResponse(db_man.content, content_type="text/plain")
 
     # links to other packages providing the same manual
-    other_versions = []
-    query = ManPage.objects.filter(section=db_man.section, name=man_name, lang=lang) \
-            .exclude(package__id=db_pkg.id) \
-            .order_by("package__repo", "package__name")
-    for man in query:
-        pkg = man.package
+    other_packages = []
+    query = ManPage.objects.values("package__repo", "package__name") \
+                           .filter(section=db_man.section, name=man_name, lang=lang) \
+                           .exclude(package__id=db_pkg.id) \
+        .union(SymbolicLink.objects.values("package__repo", "package__name") \
+                                   .filter(from_section=db_man.section, from_name=man_name, lang=lang) \
+                                   .exclude(package__id=db_pkg.id)) \
+        .order_by("package__repo", "package__name")
+    for row in query:
         info = {
-            "repo": pkg.repo,
-            "pkgname": pkg.name,
-            "manname": man.name,
-            "mansection": man.section,
+            "repo": row["package__repo"],
+            "name": row["package__name"],
         }
-        other_versions.append(info)
-    # TODO: show also symlinks?
+        other_packages.append(info)
 
     # links to other languages - might lead to different package, even if the user specified repo or pkgname
     other_languages = set()
-    query = ManPage.objects.filter(section=db_man.section,
-                                   name=db_man.name) \
-                           .exclude(lang=lang)
-    for man in query:
-        other_languages.add(man.lang)
-    # TODO: show also symlinks?
+    query = ManPage.objects.values("lang") \
+                           .filter(section=db_man.section, name=man_name) \
+                           .exclude(lang=lang) \
+        .union(SymbolicLink.objects.values("lang") \
+                                   .filter(from_section=db_man.section, from_name=man_name) \
+                                   .exclude(lang=lang))
+    for row in query:
+        other_languages.add(row["lang"])
 
     # links to other sections - might lead to different package, even if the user specified repo or pkgname
     other_sections = set()
-    query = ManPage.objects.filter(name=db_man.name, lang=lang) \
-            .exclude(section=db_man.section)
-    for man in query:
-        other_sections.add(man.section)
-    # TODO: show also symlinks?
+    query = ManPage.objects.values("section") \
+                           .filter(name=man_name, lang=lang) \
+                           .exclude(section=db_man.section) \
+        .union(SymbolicLink.objects.values("from_section") \
+                                   .filter(from_name=man_name, lang=lang) \
+                                   .exclude(from_section=db_man.section))
+    for row in query:
+        other_sections.add(row["section"])
 
     # convert the man page to HTML if not already done
     if db_man.html is None:
@@ -316,7 +321,7 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
         "pkg": db_pkg,
         "man": db_man,
         "headings": headings,
-        "other_versions": other_versions,
+        "other_packages": other_packages,
         "other_languages": sorted(other_languages),
         "other_sections": sorted(other_sections),
     }

@@ -34,11 +34,11 @@
 </details>
 
 <nav class="other-packages">
-    {% if other_versions %}
+    {% if other_packages %}
         <p>In other packages:</p>
         <ul>
-        {% for info in other_versions %}
-            <li><a href="{% reverse_man_url info.repo info.pkgname info.manname info.mansection lang url_output_type %}">{{ info.repo }}/{{ info.pkgname }}: {{ info.manname }}({{ info.mansection }})</a></li>
+        {% for pkg in other_packages %}
+            <li><a href="{% reverse_man_url pkg.repo pkg.name man.name man.section lang url_output_type %}">{{ pkg.repo }}/{{ pkg.name }}: {{ man.name }}({{ man.section }})</a></li>
         {% endfor %}
         </ul>
     {% endif %}
