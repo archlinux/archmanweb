@@ -14,6 +14,7 @@ from finder import MANDIR, ManPagesFinder
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
 import django
 django.setup()
+from django.db import connection
 from archweb_manpages.models import Package, ManPage, SymbolicLink
 
 
@@ -240,6 +241,14 @@ def update_man_pages(finder, updated_pkgs):
         # update pkg version
         db_pkg.version = pkg.version
         db_pkg.save()
+
+    if connection.vendor == "postgresql":
+        logger.info("Running VACUUM ANALYZE on our tables...")
+        for Model in [Package, ManPage, SymbolicLink]:
+            table = Model.objects.model._meta.db_table
+            logger.info("--> {}".format(table))
+            with connection.cursor() as cursor:
+                cursor.execute("VACUUM ANALYZE {};".format(table))
 
 
 if __name__ == "__main__":
