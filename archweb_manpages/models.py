@@ -1,5 +1,25 @@
 from django.db import models
+from django.db import connection
+from django.contrib.postgres.indexes import GinIndex
 from django.core.exceptions import ValidationError
+
+# ref: https://stackoverflow.com/a/44962928/4180822
+class TrigramIndex(GinIndex):
+    def get_sql_create_template_values(self, model, schema_editor, using):
+        fields = [model._meta.get_field(field_name) for field_name, order in self.fields_orders]
+        tablespace_sql = schema_editor._get_index_tablespace_sql(model, fields)
+        quote_name = schema_editor.quote_name
+        columns = [
+            ('%s %s' % (quote_name(field.column), order)).strip() + ' gin_trgm_ops'
+            for field, (field_name, order) in zip(fields, self.fields_orders)
+        ]
+        return {
+            'table': quote_name(model._meta.db_table),
+            'name': quote_name(self.name),
+            'columns': ', '.join(columns),
+            'using': using,
+            'extra': tablespace_sql,
+        }
 
 class Package(models.Model):
     id = models.AutoField(primary_key=True)
@@ -12,6 +32,8 @@ class Package(models.Model):
         unique_together = (
             ('name', 'repo'),
         )
+        if connection.vendor == "postgresql":
+            indexes = [TrigramIndex(fields=["name"])]
 
     def __str__(self):
         return "<Package: arch={}, repo={}, name={}, version={}>".format(self.arch, self.repo, self.name, self.version)
@@ -56,6 +78,8 @@ class ManPage(models.Model):
             # for optional 'section' and for filter in 'links to other sections'
             ('name', 'lang'),
         )
+        if connection.vendor == "postgresql":
+            indexes = [TrigramIndex(fields=["name"])]
 
     def clean(self):
         if not self.path:
@@ -100,6 +124,8 @@ class SymbolicLink(models.Model):
             # for checks in try_symlink_or_404
             ('from_name', 'lang'),
         )
+        if connection.vendor == "postgresql":
+            indexes = [TrigramIndex(fields=["from_name"])]
 
     def __str__(self):
         return "<SymbolicLink: package={}, lang={}, from_section={}, from_name={}, to_section={}, to_name>" \

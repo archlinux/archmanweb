@@ -1,4 +1,5 @@
 from django.conf.urls import url
+from django.db import connection
 
 from . import views
 
@@ -13,3 +14,6 @@ urlpatterns = [
         views.man_page, name='man_page'),
     url(r'^(?P<template_name>[a-z]+)', views.simple_view, name='simple_view'),
 ]
+if connection.vendor == "postgresql":
+    # must go before simple_view
+    urlpatterns.insert(-1, url(r'^search', views.search, name="search"))

@@ -4,6 +4,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Count
+from django.contrib.postgres.search import TrigramSimilarity
 
 from .models import Package, ManPage, SymbolicLink
 from .utils import reverse_man_url, postprocess, extract_headings
@@ -321,3 +322,29 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
     }
 
     return render(request, "man_page.html", context)
+
+def search(request):
+    term = request.GET["q"]
+
+    man_results = ManPage.objects.values("name", "section", "lang", "package__repo", "package__name") \
+                                 .filter(name__trigram_similar=term) \
+                                 .annotate(similarity=TrigramSimilarity("name", term)) \
+           .union(SymbolicLink.objects.values("from_name", "from_section", "lang", "package__repo", "package__name")
+                                      .filter(from_name__trigram_similar=term)
+                                      .annotate(similarity=TrigramSimilarity("from_name", term)),
+                  all=True) \
+           .order_by("-similarity", "name", "section", "lang")
+    man_results = paginate(request, "page_man", man_results, 20)
+
+    pkg_results = Package.objects.values("repo", "name") \
+                                 .filter(name__trigram_similar=term) \
+                                 .annotate(similarity=TrigramSimilarity("name", term)) \
+                                 .order_by("-similarity", "name", "repo")
+    pkg_results = paginate(request, "page_pkg", pkg_results, 20)
+
+    context = {
+        "man_results": man_results,
+        "pkg_results": pkg_results,
+    }
+
+    return render(request, "search.html", context)

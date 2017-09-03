@@ -12,6 +12,10 @@ header > a {
 header > a.selected {
     color: inherit;
 }
+header > form.search {
+    display: inline;
+    margin-left: 3em;
+}
 
 main#content {
     display: flex;
