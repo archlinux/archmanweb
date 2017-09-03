@@ -2,12 +2,11 @@ import subprocess
 
 from django.shortcuts import render
 from django.http import HttpResponse, Http404, HttpResponseRedirect
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Count
 from django.contrib.postgres.search import TrigramSimilarity
 
 from .models import Package, ManPage, SymbolicLink
-from .utils import reverse_man_url, postprocess, extract_headings
+from .utils import reverse_man_url, paginate, postprocess, extract_headings
 
 def index(request):
     count_man_pages = ManPage.objects.count()
@@ -26,19 +25,6 @@ def simple_view(request, *, template_name):
     if template_name not in {"about", "dev"}:
         raise Http404()
     return render(request, "{}.html".format(template_name), {})
-
-def paginate(request, url_param, query, limit):
-    paginator = Paginator(query, limit)
-    page = request.GET.get(url_param)
-    try:
-        query = paginator.page(page)
-    except PageNotAnInteger:
-        # If page is not an integer, deliver the first page.
-        query = paginator.page(1)
-    except EmptyPage:
-        # If page is out of range, deliver the last page.
-        query = paginator.page(paginator.num_pages)
-    return query
 
 def listing(request, *, repo=None, pkgname=None):
     sorting = request.GET.get("sorting", "alphabetical")

@@ -1,6 +1,7 @@
 import re
 
 from django.urls import reverse
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 def reverse_man_url(repo, pkgname, man_name, man_section, man_lang, content_type):
     # django's reverse function can't reverse our regexes, so we're doing it the old way
@@ -17,6 +18,19 @@ def reverse_man_url(repo, pkgname, man_name, man_section, man_lang, content_type
     if content_type:
         url += "." + content_type
     return url
+
+def paginate(request, url_param, query, limit):
+    paginator = Paginator(query, limit)
+    page = request.GET.get(url_param)
+    try:
+        query = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver the first page.
+        query = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range, deliver the last page.
+        query = paginator.page(paginator.num_pages)
+    return query
 
 # very slow on long pages, but we keep it if we need to validate the regex-only version below
 def postprocess_bs(html, lang):
