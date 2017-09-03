@@ -33,7 +33,13 @@ article.single-column-content {
     width: 100%;
 }
 
-.listing-multicolumn-wrapper ul {
+ul.multi-column,
+ol.multi-column {
     column-width: 20em;
     column-gap: 1.5em;
+    padding-left: 0.5em;
+}
+ul.multi-column > li,
+ol.multi-column > li {
+    margin-left: 2em; /* needed to preserve bullets/numbers in multi-column layout */
 }

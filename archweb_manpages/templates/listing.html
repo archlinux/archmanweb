@@ -9,7 +9,7 @@
 {% block content %}
 <article class="single-column-content">
 
-<section class="listing-multicolumn-wrapper">
+<section>
 {% if pkg %}
     <p>The package
     <a href="https://www.archlinux.org/packages/{{ pkg.repo }}/{{ pkg.arch }}/{{ pkg.name }}/">{{ pkg.repo }}/{{ pkg.name }}</a>
@@ -17,7 +17,7 @@
 {% endif %}
 
 {% if man_pages %}
-    <ul>
+    <ul class="multi-column">
     {% for man in man_pages %}
         <li>
             <span class="language-tag">[{{ man.lang }}]</span>
@@ -57,9 +57,9 @@
 </section>
 
 {% if pkg and symlinks %}
-    <section class="listing-multicolumn-wrapper">
+    <section>
     <p>...and these symbolic links:</p>
-    <ul>
+    <ul class="multi-column">
     {% for symlink in symlinks %}
         <li>
             <span class="language-tag">[{{ symlink.lang }}]</span>
