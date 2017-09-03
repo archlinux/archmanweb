@@ -239,7 +239,7 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
     man_name, man_section, url_lang = _parse_man_name_section_lang(name_section_lang)
     lang = url_lang or "en"
     serve_output_type = url_output_type or "html"
-    if serve_output_type != "html":
+    if serve_output_type not in {"html", "raw"}:
         return HttpResponse("Serving of {} content type is not implemented yet.".format(serve_output_type), status=501)
 
     # find the man page and package containing it
@@ -259,6 +259,9 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
         if man_section is None:
             return HttpResponseRedirect(reverse_man_url(repo, pkgname, man_name, db_man.section, url_lang, url_output_type))
         db_pkg = db_man.package
+
+    if serve_output_type == "raw":
+        return HttpResponse(db_man.content, content_type="text/plain")
 
     # links to other packages providing the same manual
     other_versions = []
