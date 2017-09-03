@@ -9,17 +9,17 @@
 
 <section>
     <h1>Results for <em>{{ request.GET.q }}</em> in manual names</h1>
-        <ol start="{{ man_results.start_index }}">
-        {% for man in man_results %}
-            <li>
-                <a href="{% reverse_man_url man.package__repo man.package__name man.name man.section man.lang '' %}">{{ man.name }}({{ man.section }})</a>
-                [{{ man.lang }}]
-                (from the <a href="{% url 'listing' %}{{ man.package__repo }}/{{ man.package__name }}/">{{ man.package__repo }}/{{ man.package__name }}</a> package)
-            </li>
-        {% empty %}
-            No results.
-        {% endfor%}
-        <ol>
+    <ol start="{{ man_results.start_index }}">
+    {% for man in man_results %}
+        <li>
+            <a href="{% reverse_man_url man.package__repo man.package__name man.name man.section man.lang '' %}">{{ man.name }}({{ man.section }})</a>
+            [{{ man.lang }}]
+            (from the <a href="{% url 'listing' %}{{ man.package__repo }}/{{ man.package__name }}/">{{ man.package__repo }}/{{ man.package__name }}</a> package)
+        </li>
+    {% empty %}
+        No results.
+    {% endfor%}
+    <ol>
 
     {% if man_results.paginator.num_pages != 1 %}
         <nav class="pagination">
@@ -50,13 +50,13 @@
 
 <section>
     <h1>Results for <em>{{ request.GET.q }}</em> in package names</h1>
-        <ol start="{{ pkg_results.start_index }}">
-        {% for pkg in pkg_results %}
-            <li><a href="{% url 'listing' %}{{ pkg.repo }}/{{ pkg.name }}/">{{ pkg.repo }}/{{ pkg.name }}</a></li>
-        {% empty %}
-            No results.
-        {% endfor%}
-        <ol>
+    <ol start="{{ pkg_results.start_index }}">
+    {% for pkg in pkg_results %}
+        <li><a href="{% url 'listing' %}{{ pkg.repo }}/{{ pkg.name }}/">{{ pkg.repo }}/{{ pkg.name }}</a></li>
+    {% empty %}
+        No results.
+    {% endfor%}
+    <ol>
 
     {% if pkg_results.paginator.num_pages != 1 %}
         <nav class="pagination">
