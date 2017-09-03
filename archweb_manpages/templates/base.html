@@ -13,12 +13,14 @@
     <body>
         <header>
             <h1>Arch manual pages</h1>
-            {% url 'index' as url_index %}
-            <a href="{{ url_index }}" {% if request.path == url_index %}class="selected"{% endif %}>Home</a>
-            {% url 'simple_view' 'about' as url_about %}
-            <a href="{{ url_about }}" {% if request.path == url_about %}class="selected"{% endif %}>About</a>
-            {% url 'simple_view' 'dev' as url_dev %}
-            <a href="{{ url_dev }}" {% if request.path == url_dev %}class="selected"{% endif %}>Dev</a>
+            <nav>
+                {% url 'index' as url_index %}
+                <a href="{{ url_index }}" {% if request.path == url_index %}class="selected"{% endif %}>Home</a>
+                {% url 'simple_view' 'about' as url_about %}
+                <a href="{{ url_about }}" {% if request.path == url_about %}class="selected"{% endif %}>About</a>
+                {% url 'simple_view' 'dev' as url_dev %}
+                <a href="{{ url_dev }}" {% if request.path == url_dev %}class="selected"{% endif %}>Dev</a>
+            </nav>
             <form action="{% url 'search' %}" class="search" role="search">
                 <input type="search" placeholder="Search manual page" name="q" value="{% block current_search_term %}{% endblock %}" />
                 <input type="submit" value="Go" />

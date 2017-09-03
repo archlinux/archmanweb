@@ -3,18 +3,23 @@ header > h1 {
     margin-right: 3em;
     font-size: 1.25em;
 }
-header > a {
+header > nav {
+    display: inline;
+    margin-right: 3em;
+}
+header > nav > a {
     font-weight: bold;
     font-size: 1.25em;
-    margin-right: 0.5em;
     text-decoration: none;
 }
-header > a.selected {
+header > nav > a.selected {
     color: inherit;
+}
+header > nav > a:not(:last-child) {
+    margin-right: 0.5em;
 }
 header > form.search {
     display: inline;
-    margin-left: 3em;
 }
 
 main#content {
