@@ -11,18 +11,35 @@ It is an unofficial project created and maintained by the <a href="https://wiki.
 <p>
 On this website, you can find:
 <ul>
-    <li>Listings of all man pages sorted <a href="{% url 'listing' %}">alphabetically</a>, <a href="{% url 'listing' %}?sorting=section">by section</a> or <a href="{% url 'listing' %}?sorting=lang">by language</a>.</li>
-    <li>Listings of English man pages sorted <a href="{% url 'listing' %}?lang=en&sorting=alphabetical">alphabetically</a> or <a href="{% url 'listing' %}?lang=en&sorting=section">by section</a> (or similarly for any other language).</li>
-    <li>Listings of man pages in a particular section, e.g. <a href="{% url 'listing' %}?section=1">all pages in section 1</a> or <a href="{% url 'listing' %}?lang=en&section=3">English pages in section 3</a>.</li>
-    <li>Listings of man pages for a particular package, e.g. <a href="{% url 'listing' %}coreutils/">coreutils</a> or <a href="{% url 'listing' %}core/acl/">core/acl</a>.</li>
-    <li>And, of course, the content of each man page. There are {{ count_man_pages }} man pages and {{ count_symlinks }} symbolic links from {{ count_pkgs_with_mans }} packages, another {{ count_pkgs_without_mans }} packages don't contain any indexable man pages.</li>
-    <li>The man pages are addressable as <code>/man/&lt;repo&gt;/&lt;pkgname&gt;/&lt;page&gt;.&lt;section&gt;.&lt;language&gt;.&lt;format&gt;</code>.
-        Any part except <code>&lt;page&gt;</code> is optional: <code>&lt;repo&gt;</code> and <code>&lt;pkgname&gt;</code> can be used to disambiguate the page version found in multiple packages;
-        if <code>&lt;section&gt;</code> is missing, you will be redirected to the first section found;
-        the default language is <code>en</code> and the default format is <code>html</code>.
+    <li>Listings of all man pages sorted <a href="{% url 'listing' %}">alphabetically</a>,
+        <a href="{% url 'listing' %}?sorting=section">by section</a> or
+        <a href="{% url 'listing' %}?sorting=lang">by language</a>.
+        </li>
+    <li>Listings of English man pages sorted <a href="{% url 'listing' %}?lang=en&sorting=alphabetical">alphabetically</a>
+        or <a href="{% url 'listing' %}?lang=en&sorting=section">by section</a> (or similarly for any other language).
+        </li>
+    <li>Listings of man pages in a particular section, e.g. <a href="{% url 'listing' %}?section=1">all pages in section 1</a>
+        or <a href="{% url 'listing' %}?lang=en&section=3">English pages in section 3</a>.
+        </li>
+    <li>Listings of man pages for a particular package, e.g. <a href="{% url 'listing' %}coreutils/">coreutils</a>
+        or <a href="{% url 'listing' %}core/acl/">core/acl</a>.
+        </li>
+    <li>And, of course, the content of each man page. There are {{ count_man_pages }} man pages and
+        {{ count_symlinks }} symbolic links from {{ count_pkgs_with_mans }} packages, another
+        {{ count_pkgs_without_mans }} packages don't contain any indexable man pages.
+        </li>
+    <li>The man pages are addressable as
+        <code>/man/&lt;repo&gt;/&lt;pkgname&gt;/&lt;page&gt;.&lt;section&gt;.&lt;language&gt;.&lt;format&gt;</code>.
+        Any part except <code>&lt;page&gt;</code> is optional: <code>&lt;repo&gt;</code> and <code>&lt;pkgname&gt;</code>
+        can be used to disambiguate the page version found in multiple packages; if <code>&lt;section&gt;</code> is
+        missing, you will be redirected to the first section found; the default language is <code>en</code> and the
+        default format is <code>html</code> (other supported format is <code>raw</code>).
         Note that <code>en</code> is also the fallback language for pages, which are not available in any other language.
     </li>
-    <li>Symbolic links, such as <a href="{% url 'index' %}man/bunzip2.1">bunzip2(1)</a>, are implemented as HTTP redirects with the 302 status code. Symbolic links are included in per-package listings, such as <a href="{% url 'listing' %}core/openssl/">core/openssl</a>.</li>
+    <li>Symbolic links, such as <a href="{% url 'index' %}man/bunzip2.1">bunzip2(1)</a>, are implemented as HTTP
+        redirects with the 302 status code. Symbolic links are included in per-package listings, such as
+        <a href="{% url 'listing' %}core/openssl/">core/openssl</a>.
+        </li>
 </ul>
 </p>
 
