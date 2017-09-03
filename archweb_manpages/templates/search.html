@@ -20,7 +20,7 @@
     {% empty %}
         No results.
     {% endfor%}
-    <ol>
+    </ol>
 
     {% if man_results.paginator.num_pages != 1 %}
         {% pagination_links request man_results 'page_man' %}
@@ -35,7 +35,7 @@
     {% empty %}
         No results.
     {% endfor%}
-    <ol>
+    </ol>
 
     {% if pkg_results.paginator.num_pages != 1 %}
         {% pagination_links request pkg_results 'page_pkg' %}
