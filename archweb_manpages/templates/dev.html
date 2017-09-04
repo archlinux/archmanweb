@@ -35,13 +35,13 @@ Some similar projects:
     <li>improve page layout and CSS stylesheets</li>
     <li>serve also a plain-text version</li>
     <li>full-text search (needs the plain-text version to be pre-saved in the database for all man pages) &ndash; see <a href="https://docs.djangoproject.com/en/1.11/ref/contrib/postgres/search/">Django: Full text search</a></li>
-    <li>record info about updates (e.g. timestamp, how long the update took, number of updated packages, ...) in the database and show it on this page</li>
+    <li>record info about updates (e.g. timestamp, how long the update took, number of updated packages, ...) in the database and show it on the front page</li>
     <li>import testing repositories (selection of the default package when there are multiple versions would have to be adjusted)</li>
     <li>when downloading packages, ensure that same packages from different repos don't overwrite themselves (though if pacman does not handle it, it should never happen)</li>
     <li>
         problematic pages:
         <ul>
-            <li>HTML converter fails on <a href="{% url 'index' %}man/[.1.zh_CN">[(1)</a>, <a href="{% url 'index' %}man/30-systemd-environment-d-generator.8.en">30-systemd-environment-d-generator(8)</a> (reference to a <it>file</it>). The solution would probably involve using a modified <a href="http://mdocml.bsd.lv/man/soelim.1.html">soelim(1)</a> with mandoc.</li>
+            <li>HTML converter fails on <a href="{% url 'index' %}man/[.1.zh_CN">[(1)</a>, <a href="{% url 'index' %}man/30-systemd-environment-d-generator.8.en">30-systemd-environment-d-generator(8)</a> and many others (they include a reference to a <em>file</em>). The solution would probably involve using a modified <a href="http://mdocml.bsd.lv/man/soelim.1.html">soelim(1)</a> or a custom pre-processor.</li>
         </ul>
     </li>
 </ul>
