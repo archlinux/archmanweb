@@ -18,6 +18,9 @@
         problems with pages such as <a href="{% url 'index' %}man/ar.1">ar(1)</a> and
         <a href="{% url 'index' %}man/ar.1p">ar(1p)</a>.
         </li>
+    <li>The URLs used by the <em>man</em> template should not redirect to permalinks, otherwise users would start
+        copy-pasting them to the wiki and it would be hard to check if they are the same as the canonical URLs.
+        </li>
     <li>Human-readable subsection anchors.</li>
     <li>The page should clearly indicate the Arch package version containing the page.</li>
 </ol>
