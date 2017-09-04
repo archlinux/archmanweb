@@ -1,4 +1,6 @@
+import re
 import subprocess
+from pathlib import PurePath
 
 from django.shortcuts import render
 from django.http import HttpResponse, Http404, HttpResponseRedirect
@@ -291,9 +293,28 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
 
     # convert the man page to HTML if not already done
     if db_man.html is None:
+        # eliminate the '.so' macro
+        if re.fullmatch(r"^\.so [A-Za-z0-9@._+\-:\[\]\/]+\s*$", db_man.content):
+            path = db_man.content.split()[1]
+            pp = PurePath(path)
+            target_name = pp.stem
+            target_section = pp.suffix[1:]  # strip the dot
+            # we search only in the same package, otherwise the attribution info provided on the page wouldn't be correct
+            query = ManPage.objects.filter(section=target_section, name=target_name, lang=lang, package_id=db_pkg.id)
+            if len(query) == 0:
+                raise Http404("The requested manual contains a .so reference to a file, "
+                              "which was not found in the same package: {}".format(path))
+            # replacing the content instead of doing a HTTP redirect is closer to the
+            # intention behind the .so macro, because the old name stays in the URL
+            # TODO: with a better database structure we would not have to duplicate the resulting HTML
+            # TODO: check that there are no double redirects
+            content = query[0].content
+        else:
+            content = db_man.content
+
         url_pattern = reverse_man_url("", "", "%N", "%S", lang, "")
         cmd = "mandoc -T html -O fragment,man={}".format(url_pattern)
-        p = subprocess.run(cmd, shell=True, check=True, input=db_man.content, encoding="utf-8", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.run(cmd, shell=True, check=True, input=content, encoding="utf-8", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         assert p.stdout
         db_man.html = postprocess(p.stdout, lang)
         db_man.save()

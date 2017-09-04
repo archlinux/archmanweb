@@ -38,12 +38,6 @@ Some similar projects:
     <li>record info about updates (e.g. timestamp, how long the update took, number of updated packages, ...) in the database and show it on the front page</li>
     <li>import testing repositories (selection of the default package when there are multiple versions would have to be adjusted)</li>
     <li>when downloading packages, ensure that same packages from different repos don't overwrite themselves (though if pacman does not handle it, it should never happen)</li>
-    <li>
-        problematic pages:
-        <ul>
-            <li>HTML converter fails on <a href="{% url 'index' %}man/[.1.zh_CN">[(1)</a>, <a href="{% url 'index' %}man/30-systemd-environment-d-generator.8.en">30-systemd-environment-d-generator(8)</a> and many others (they include a reference to a <em>file</em>). The solution would probably involve using a modified <a href="http://mdocml.bsd.lv/man/soelim.1.html">soelim(1)</a> or a custom pre-processor.</li>
-        </ul>
-    </li>
 </ul>
 
 <h1>Test cases</h1>
@@ -86,6 +80,26 @@ Some similar projects:
     <li><a href="{% url 'index' %}man/nvidia-340xx-utils/nvidia-smi.cs">nvidia-340xx-utils/nvidia-smi.cs</a> &rarr; <a href="{% url 'index' %}man/nvidia-340xx-utils/nvidia-smi.cs">nvidia-utils/nvidia-340xx-smi.en</a></li>
     <li><a href="{% url 'index' %}man/foo/nvidia-smi.cs">foo/nvidia-smi.cs</a> &rarr; 404</li>
     <li><a href="{% url 'index' %}man/foo/nvidia-smi.en">foo/nvidia-smi.en</a> &rarr; 404</li>
+</ul>
+
+<h2>.so macros</h2>
+<p>
+There is a <a href="{% url 'index' %}man/groff.1">groff(1)</a> extension for the
+<a href="{% url 'index' %}man/man.7">man(7)</a> and <a href="{% url 'index' %}man/mdoc.7">mdoc(7)</a> languages
+to include contents of other files using the <code>.so</code> macro. In normal operation where manuals are stored
+as files on a file system, the <a href="{% url 'index' %}man/soelim.1">soelim(1)</a> pre-processor handles the
+inclusion. Our system is based on a database rather than a file system, so we need a custom <code>soelim</code>
+as well.
+</p>
+<p>Some pages which contain the <code>.so</code> macro:</p>
+<ul>
+    <li><a href="{% url 'index' %}man/[.1.zh_CN">[.1.zh_CN</a></li>
+    <li><a href="{% url 'index' %}man/pwunconv.8">pwunconv(8)</a></li>
+    <li><a href="{% url 'index' %}man/pam.8">pam(8)</a></li>
+    <li><a href="{% url 'index' %}man/url.7">url(7)</a></li>
+    <li><a href="{% url 'index' %}man/xorg.conf.d.5">xorg.conf.d(5)</a></li>
+    <li><a href="{% url 'index' %}man/glibc.7">glibc(7)</a></li>
+    <li><a href="{% url 'index' %}man/systemd-logind.8">systemd-logind(8)</a></li>
 </ul>
 
 </article>
