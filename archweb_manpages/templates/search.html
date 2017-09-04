@@ -3,6 +3,10 @@
 {% load reverse_man_url %}
 {% load pagination_links %}
 
+{% block head %}
+    <meta name="robots" value="noindex">
+{% endblock %}
+
 {% block current_search_term %}{{ request.GET.q }}{% endblock %}
 
 {% block content %}
