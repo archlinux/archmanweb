@@ -272,7 +272,7 @@ if __name__ == "__main__":
             update_man_pages(finder, [p for p in updated_pkgs if p.name in args.only_packages])
 
     # VACUUM cannot run inside a transaction block
-    if updated_pkgs or args.only_package is not None:
+    if updated_pkgs or args.only_packages is not None:
         if connection.vendor == "postgresql":
             logger.info("Running VACUUM ANALYZE on our tables...")
             for Model in [Package, ManPage, SymbolicLink]:
