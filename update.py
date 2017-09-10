@@ -3,6 +3,7 @@
 import argparse
 import os.path
 import logging
+import datetime
 from pathlib import PurePath
 
 import chardet
@@ -14,7 +15,7 @@ from finder import MANDIR, ManPagesFinder
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
 import django
 django.setup()
-from django.db import connection
+from django.db import connection, transaction
 from archweb_manpages.models import Package, ManPage, SymbolicLink
 
 
@@ -78,9 +79,7 @@ def update_packages(finder, *, force=False, only_repos=None):
                 db_package = Package()
                 db_package.repo = db.name
                 db_package.name = pkg.name
-                db_package.version = pkg.version
                 db_package.arch = pkg.arch
-                db_package.save()
                 updated_pkgs.append(pkg)
             else:
                 db_package = result[0]
@@ -89,6 +88,13 @@ def update_packages(finder, *, force=False, only_repos=None):
                     updated_pkgs.append(pkg)
                 elif force is True:
                     updated_pkgs.append(pkg)
+
+            # always update volatile fields
+            db_package.version = pkg.version
+            db_package.description = pkg.desc
+            db_package.url = pkg.url
+            db_package.build_date = datetime.datetime.fromtimestamp(pkg.builddate, tz=datetime.timezone.utc)
+            db_package.save()
 
     # delete old packages from the django database
     for db_package in Package.objects.order_by("repo").order_by("name"):
@@ -105,9 +111,6 @@ def update_man_pages(finder, updated_pkgs):
         db_pkg = Package.objects.filter(repo=pkg.db.name, name=pkg.name)[0]
         files = set(finder.get_man_files(pkg))
         if not files:
-            # just update the pkgver in the database
-            db_pkg.version = pkg.version
-            db_pkg.save()
             continue
 
         # the files above include the .gz suffix, we need to collect even the
@@ -238,18 +241,6 @@ def update_man_pages(finder, updated_pkgs):
             if db_man.path not in paths:
                 ManPage.objects.filter(package_id=db_pkg.id, path=db_man.path).delete()
 
-        # update pkg version
-        db_pkg.version = pkg.version
-        db_pkg.save()
-
-    if connection.vendor == "postgresql":
-        logger.info("Running VACUUM ANALYZE on our tables...")
-        for Model in [Package, ManPage, SymbolicLink]:
-            table = Model.objects.model._meta.db_table
-            logger.info("--> {}".format(table))
-            with connection.cursor() as cursor:
-                cursor.execute("VACUUM ANALYZE {};".format(table))
-
 
 if __name__ == "__main__":
     # init logging
@@ -272,8 +263,20 @@ if __name__ == "__main__":
     finder = ManPagesFinder("./.cache")
     finder.refresh()
 
-    updated_pkgs = update_packages(finder, force=args.force, only_repos=args.only_repos)
-    if args.only_packages is None:
-        update_man_pages(finder, updated_pkgs)
-    else:
-        update_man_pages(finder, [p for p in updated_pkgs if p.name in args.only_packages])
+    # everything in a single transaction
+    with transaction.atomic():
+        updated_pkgs = update_packages(finder, force=args.force, only_repos=args.only_repos)
+        if args.only_packages is None:
+            update_man_pages(finder, updated_pkgs)
+        else:
+            update_man_pages(finder, [p for p in updated_pkgs if p.name in args.only_packages])
+
+    # VACUUM cannot run inside a transaction block
+    if updated_pkgs or args.only_package is not None:
+        if connection.vendor == "postgresql":
+            logger.info("Running VACUUM ANALYZE on our tables...")
+            for Model in [Package, ManPage, SymbolicLink]:
+                table = Model.objects.model._meta.db_table
+                logger.info("--> {}".format(table))
+                with connection.cursor() as cursor:
+                    cursor.execute("VACUUM ANALYZE {};".format(table))

@@ -28,6 +28,13 @@ class Package(models.Model):
     version = models.TextField()
     arch = models.TextField()
 
+    # non-essential attributes (useful for search etc.)
+    description = models.TextField()
+    url = models.TextField(null=True)  # nullable in pacman
+    build_date = models.DateTimeField()
+
+    # TODO: interesting ArrayField (PostgreSQL-only) attributes: licenses
+
     class Meta:
         unique_together = (
             ('name', 'repo'),
