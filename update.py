@@ -84,12 +84,14 @@ def update_packages(finder, *, force=False, only_repos=None):
             else:
                 db_package = result[0]
                 if pyalpm.vercmp(db_package.version, pkg.version) == -1:
-                    # db_package.version will be updated later, in the same transaction as the man pages
                     updated_pkgs.append(pkg)
                 elif force is True:
                     updated_pkgs.append(pkg)
+                else:
+                    # skip void update of db_package
+                    continue
 
-            # always update volatile fields
+            # update volatile fields (this is run iff the pkg was added to updated_pkgs)
             db_package.version = pkg.version
             db_package.description = pkg.desc
             db_package.url = pkg.url
