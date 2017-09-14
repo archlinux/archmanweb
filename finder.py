@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 import os.path
+import shutil
 import datetime
 import logging
 import tarfile
@@ -137,6 +138,10 @@ class ManPagesFinder:
             logger.exception("Failed to sync pacman database.")
             raise
 
+    def clear_pkgcache(self):
+        # TODO: we should call pyalpm to do the equivalent of "pacman -Scc", but it's not implemented there
+        shutil.rmtree(self.cachedir)
+
     def get_man_files(self, pkg, repo=None):
         if repo is None:
             repo = [db for db in self.sync_db.get_syncdbs() if db.get_pkg(pkg.name)][0].name
@@ -164,7 +169,7 @@ class ManPagesFinder:
         if not pycman.transaction.finalize(t):
             raise Exception("Pycman transaction failed: {}".format(t))
 
-    def get_man_contents(self, pkg, *, keep_tarball=True):
+    def get_man_contents(self, pkg):
         """
         Note: the content is yielded as `bytes`, its decoding is not a priori known
         """
@@ -195,14 +200,10 @@ class ManPagesFinder:
                 yield "file", file, man
         t.close()
 
-        # clean up
-        if keep_tarball is False:
-            os.remove(tarball)
-
-    def get_all_man_contents(self, *, keep_tarballs=True):
+    def get_all_man_contents(self):
         for db in self.sync_db.get_syncdbs():
             for pkg in db.pkgcache:
-                for v1, v2, v3 in self.get_man_contents(pkg, keep_tarball=keep_tarballs):
+                for v1, v2, v3 in self.get_man_contents(pkg):
                     yield pkg, v1, v2, v3
 
     def pkg_exists(self, repo, pkgname):

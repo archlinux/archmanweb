@@ -260,9 +260,13 @@ if __name__ == "__main__":
                         help="import packages (and man pages) only from these repositories")
     parser.add_argument("--only-packages", action="store", nargs="+", metavar="NAME",
                         help="import man pages only from these packages")
+    parser.add_argument("--cache-dir", action="store", default="./.cache/",
+                        help="path to the cache directory (default: %(default)s)")
+    parser.add_argument("--keep-tarballs", action="store_true",
+                        help="keep downloaded package tarballs in the cache directory")
     args = parser.parse_args()
 
-    finder = ManPagesFinder("./.cache")
+    finder = ManPagesFinder(args.cache_dir)
     finder.refresh()
 
     # everything in a single transaction
@@ -272,6 +276,10 @@ if __name__ == "__main__":
             update_man_pages(finder, updated_pkgs)
         else:
             update_man_pages(finder, [p for p in updated_pkgs if p.name in args.only_packages])
+
+    # this is called outside of the transaction, so that the cache can be reused on errors
+    if args.keep_tarballs is False:
+        finder.clear_pkgcache()
 
     # VACUUM cannot run inside a transaction block
     if updated_pkgs or args.only_packages is not None:
