@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load make_table %}
 
 {% block content %}
 <article>
@@ -54,6 +55,11 @@ Intro pages:
 <a href="{% url 'index' %}man/intro.7">intro(7)</a>,
 <a href="{% url 'index' %}man/intro.8">intro(8)</a>.
 </p>
+
+<section>
+    <h2>Last updates</h2>
+    {% make_table last_updates %}
+</section>
 
 </article>
 {% endblock %}

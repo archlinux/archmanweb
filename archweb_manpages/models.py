@@ -158,3 +158,17 @@ class UpdateLog(models.Model):
     stats_count_symlinks = models.IntegerField()
     stats_count_all_pkgs = models.IntegerField()
     stats_count_pkgs_with_mans = models.IntegerField()
+
+    class HtmlTableConfig:
+        columns = (
+            "timestamp",
+            "duration",
+            "updated_pkgs",
+            "updated_pages",
+        )
+        descriptions = (
+            "Time (UTC)",
+            "Duration",
+            "Updated packages",
+            "Updated man pages",
+        )

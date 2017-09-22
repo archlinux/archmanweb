@@ -7,7 +7,7 @@ from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.db.models import Count
 from django.contrib.postgres.search import TrigramSimilarity
 
-from .models import Package, ManPage, SymbolicLink
+from .models import Package, ManPage, SymbolicLink, UpdateLog
 from .utils import reverse_man_url, paginate, postprocess, extract_headings
 
 def index(request):
@@ -15,11 +15,13 @@ def index(request):
     count_symlinks = SymbolicLink.objects.count()
     count_all_pkgs = Package.objects.count()
     count_pkgs_with_mans = ManPage.objects.aggregate(Count("package_id", distinct=True))["package_id__count"]
+    last_updates = UpdateLog.objects.order_by("-id")[:10]
     context = {
         "count_man_pages": count_man_pages,
         "count_symlinks": count_symlinks,
         "count_pkgs_with_mans": count_pkgs_with_mans,
         "count_pkgs_without_mans": count_all_pkgs - count_pkgs_with_mans,
+        "last_updates": last_updates,
     }
     return render(request, "index.html", context)
 
