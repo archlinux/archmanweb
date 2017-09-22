@@ -16,7 +16,8 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
 import django
 django.setup()
 from django.db import connection, transaction
-from archweb_manpages.models import Package, ManPage, SymbolicLink
+from django.db.models import Count
+from archweb_manpages.models import Package, ManPage, SymbolicLink, UpdateLog
 
 
 logger = logging.getLogger(__name__)
@@ -108,6 +109,7 @@ def update_packages(finder, *, force=False, only_repos=None):
 
 def update_man_pages(finder, updated_pkgs):
     logger.info("Updating man pages from {} packages...".format(len(updated_pkgs)))
+    updated_pages = 0
 
     for pkg in updated_pkgs:
         db_pkg = Package.objects.filter(repo=pkg.db.name, name=pkg.name)[0]
@@ -172,6 +174,8 @@ def update_man_pages(finder, updated_pkgs):
                 db_man.full_clean()
                 # TODO: this might still fail if there are multiple foo.1 in different directories and same language
                 db_man.save()
+
+                updated_pages += 1
 
             elif t == "symlink":
                 source, target = v1, v2
@@ -243,6 +247,8 @@ def update_man_pages(finder, updated_pkgs):
             if db_man.path not in paths:
                 ManPage.objects.filter(package_id=db_pkg.id, path=db_man.path).delete()
 
+    return updated_pages
+
 
 if __name__ == "__main__":
     # init logging
@@ -271,11 +277,26 @@ if __name__ == "__main__":
 
     # everything in a single transaction
     with transaction.atomic():
+        start = datetime.datetime.now(tz=datetime.timezone.utc)
         updated_pkgs = update_packages(finder, force=args.force, only_repos=args.only_repos)
         if args.only_packages is None:
-            update_man_pages(finder, updated_pkgs)
+            count_updated_pages = update_man_pages(finder, updated_pkgs)
         else:
-            update_man_pages(finder, [p for p in updated_pkgs if p.name in args.only_packages])
+            count_updated_pages = update_man_pages(finder, [p for p in updated_pkgs if p.name in args.only_packages])
+
+        end = datetime.datetime.now(tz=datetime.timezone.utc)
+
+        # log update
+        log = UpdateLog()
+        log.timestamp = start
+        log.duration = end - start
+        log.updated_pkgs = len(updated_pkgs)
+        log.updated_pages = count_updated_pages
+        log.stats_count_man_pages = ManPage.objects.count()
+        log.stats_count_symlinks = SymbolicLink.objects.count()
+        log.stats_count_all_pkgs = Package.objects.count()
+        log.stats_count_pkgs_with_mans = ManPage.objects.aggregate(Count("package_id", distinct=True))["package_id__count"]
+        log.save()
 
     # this is called outside of the transaction, so that the cache can be reused on errors
     if args.keep_tarballs is False:

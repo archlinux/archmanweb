@@ -144,3 +144,17 @@ class SymbolicLink(models.Model):
             raise ValidationError("Symbolic link cannot be to the same name and section.")
         if "." in self.lang:
             raise ValidationError("Language tag cannot contain dots.")
+
+class UpdateLog(models.Model):
+    id = models.AutoField(primary_key=True)
+
+    timestamp = models.DateTimeField()
+    duration = models.DurationField()
+    updated_pkgs = models.IntegerField()
+    updated_pages = models.IntegerField()
+
+    # record also history of statistics after each update
+    stats_count_man_pages = models.IntegerField()
+    stats_count_symlinks = models.IntegerField()
+    stats_count_all_pkgs = models.IntegerField()
+    stats_count_pkgs_with_mans = models.IntegerField()
