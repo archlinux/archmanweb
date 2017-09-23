@@ -39,12 +39,15 @@ def format_timedelta(value, time_format="{days} days, {hours2}:{minutes2}:{secon
     })
 
 @register.simple_tag
-def make_table(rows):
+def make_table(rows, class_=None):
     config = rows[0].HtmlTableConfig
     columns = config.columns
     descriptions = config.descriptions
 
-    html = '<table>\n'
+    if class_ is None:
+        html = '<table>\n'
+    else:
+        html = format_html('<table class="{}">\n', class_)
 
     # header
     html += '<thead>\n'

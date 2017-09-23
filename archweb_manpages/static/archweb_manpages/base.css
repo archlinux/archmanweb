@@ -52,3 +52,12 @@ ul.multi-column > li,
 ol.multi-column > li {
     margin-left: 2em; /* needed to preserve bullets/numbers in multi-column layout */
 }
+
+/* last-updates table */
+table.last-updates {
+    text-align: left;
+}
+table.last-updates th,
+table.last-updates td {
+    padding-right: 1em;
+}
