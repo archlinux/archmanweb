@@ -38,7 +38,6 @@ Some similar projects:
     <li>show licenses of the package on the man page view (they will have to be imported into the database, which will become PostgreSQL-only due to ArrayField)</li>
     <li>serve also a plain-text version</li>
     <li>full-text search (needs the plain-text version to be pre-saved in the database for all man pages) &ndash; see <a href="https://docs.djangoproject.com/en/1.11/ref/contrib/postgres/search/">Django: Full text search</a></li>
-    <li>record info about updates (e.g. timestamp, how long the update took, number of updated packages, ...) in the database and show it on the front page</li>
     <li>read the <code>Accept-Language</code> header and display the manual in one of the user's preferred languages</li>
     <li>import testing repositories (selection of the default package when there are multiple versions would have to be adjusted)</li>
     <li>when downloading packages, ensure that same packages from different repos don't overwrite themselves (though if pacman does not handle it, it should never happen)</li>
