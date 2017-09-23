@@ -40,6 +40,9 @@ def format_timedelta(value, time_format="{days} days, {hours2}:{minutes2}:{secon
 
 @register.simple_tag
 def make_table(rows, class_=None):
+    # we need to access the first row twice, so this way we avoid making separate SQL query
+    rows = list(rows)
+
     config = rows[0].HtmlTableConfig
     columns = config.columns
     descriptions = config.descriptions
