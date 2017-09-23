@@ -43,6 +43,9 @@ def make_table(rows, class_=None):
     # we need to access the first row twice, so this way we avoid making separate SQL query
     rows = list(rows)
 
+    if not rows:
+        return ""
+
     config = rows[0].HtmlTableConfig
     columns = config.columns
     descriptions = config.descriptions
