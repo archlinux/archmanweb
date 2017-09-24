@@ -340,6 +340,10 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
 
     return render(request, "man_page.html", context)
 
+# references:
+#   https://www.postgresql.org/docs/current/static/pgtrgm.html
+#   https://www.postgresql.org/docs/current/static/textsearch.html
+#   https://docs.djangoproject.com/en/1.11/ref/contrib/postgres/search/
 def search(request):
     term = request.GET["q"]
 
@@ -353,10 +357,20 @@ def search(request):
            .order_by("-similarity", "name", "section", "lang")
     man_results = paginate(request, "page_man", man_results, 20)
 
-    pkg_results = Package.objects.values("repo", "name", "description") \
-                                 .filter(name__trigram_similar=term) \
-                                 .annotate(similarity=TrigramSimilarity("name", term)) \
-                                 .order_by("-similarity", "name", "repo")
+#    pkg_results = Package.objects.values("repo", "name", "description") \
+#                                 .filter(name__trigram_similar=term) \
+#                                 .annotate(similarity=TrigramSimilarity("name", term)) \
+#                                 .order_by("-similarity", "name", "repo")
+    pkg_results = Package.objects.only("repo", "name").extra(
+            select={
+                "desc_snippet": "ts_headline('english', description, plainto_tsquery(%s))",
+                "rank": "similarity(name, %s) + 2 * ts_rank(to_tsvector('english', description), plainto_tsquery(%s), 32)",
+            },
+            where=["name %% %s OR to_tsvector('english', description) @@ plainto_tsquery(%s)"],
+            params=[term, term],
+            select_params=[term, term, term],
+            order_by=('-rank', ),
+        )
     pkg_results = paginate(request, "page_pkg", pkg_results, 20)
 
     context = {

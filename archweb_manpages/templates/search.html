@@ -38,7 +38,7 @@
         <li>
             <dl>
                 <dt><a href="{% url 'listing' %}{{ pkg.repo }}/{{ pkg.name }}/">{{ pkg.repo }}/{{ pkg.name }}</a></dt>
-                <dd>{{ pkg.description }}</dd>
+                <dd>{{ pkg.desc_snippet | safe }}</dd>
             </dl>
         </li>
     {% empty %}

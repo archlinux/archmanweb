@@ -21,6 +21,32 @@ class TrigramIndex(GinIndex):
             'extra': tablespace_sql,
         }
 
+# django does not support functional indexes (indexes on expressions) out of the box,
+# otherwise we could use just this:
+#     from django.contrib.postgres.search import SearchVector
+#     GinIndex(fields=[SearchVector("description", config="english")])
+# see https://code.djangoproject.com/ticket/26167
+class SearchVectorIndex(GinIndex):
+    def __init__(self, config="english", *args, **kwargs):
+        self.config = config
+        super().__init__(*args, **kwargs)
+
+    def get_sql_create_template_values(self, model, schema_editor, using):
+        fields = [model._meta.get_field(field_name) for field_name, order in self.fields_orders]
+        tablespace_sql = schema_editor._get_index_tablespace_sql(model, fields)
+        quote_name = schema_editor.quote_name
+        columns = [
+            ("to_tsvector('%s', %s) %s" % (self.config, quote_name(field.column), order)).strip()
+            for field, (field_name, order) in zip(fields, self.fields_orders)
+        ]
+        return {
+            'table': quote_name(model._meta.db_table),
+            'name': quote_name(self.name),
+            'columns': ', '.join(columns),
+            'using': using,
+            'extra': tablespace_sql,
+        }
+
 class Package(models.Model):
     id = models.AutoField(primary_key=True)
     repo = models.TextField()
@@ -40,7 +66,10 @@ class Package(models.Model):
             ('name', 'repo'),
         )
         if connection.vendor == "postgresql":
-            indexes = [TrigramIndex(fields=["name"])]
+            indexes = (
+                TrigramIndex(fields=["name"]),
+                SearchVectorIndex(fields=["description"], config="english"),
+            )
 
     def __str__(self):
         return "<Package: arch={}, repo={}, name={}, version={}>".format(self.arch, self.repo, self.name, self.version)
