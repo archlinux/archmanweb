@@ -24,6 +24,14 @@
 .package-info > :first-child {
     margin-top: 0;
 }
+.man-page-content table.head,
+.man-page-content table.foot {
+    border-spacing: 0px;  /* chromium sets it to 2px by default */
+}
+.man-page-content table.head td,
+.man-page-content table.foot td {
+    padding: 0px;
+}
 
 
 /*
