@@ -19,6 +19,12 @@
     text-align: initial;
 }
 
+/* fix top margin */
+.man-page-content > :first-child,
+.package-info > :first-child {
+    margin-top: 0;
+}
+
 
 /*
  * Custom styles for mandoc elements.

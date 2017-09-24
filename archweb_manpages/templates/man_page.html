@@ -12,16 +12,36 @@
 {% endblock %}
 
 {% block content_left %}
-    <p>Package containing this man page:
-    <a href="https://www.archlinux.org/packages/{{ pkg.repo }}/{{ pkg.arch }}/{{ pkg.name }}/">{{ pkg.repo }}/{{ pkg.name }}</a>
-    (version {{ pkg.version }})</p>
-
     <section class="man-page-content">
         {{ man.html | safe }}
     </section>
 {% endblock %}
 
 {% block sidebar %}
+<section class="package-info">
+    <p>Package information:</p>
+    <table>
+        <tbody>
+        <tr>
+            <td>Package:</td>
+            <td><a href="https://www.archlinux.org/packages/{{ pkg.repo }}/{{ pkg.arch }}/{{ pkg.name }}/">{{ pkg.repo }}/{{ pkg.name }}</a></td>
+        </tr>
+        <tr>
+            <td>Version:</td>
+            <td>{{ pkg.version }}</td>
+        </tr>
+        <tr>
+            <td>Upstream:</td>
+            <td><a href="{{ pkg.url }}">{{ pkg.url }}</a></td>
+        </tr>
+        <tr>
+            <td>Manuals:</td>
+            <td><a href="{% url 'listing' %}{{ pkg.repo }}/{{ pkg.name }}/">{% url 'listing' %}{{ pkg.repo }}/{{ pkg.name }}/</a></td>
+        </tr>
+        </tbody>
+    </table>
+</section>
+
 <details>
     <summary>Table of contents</summary>
     <nav class="toc">
