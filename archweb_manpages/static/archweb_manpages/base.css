@@ -77,3 +77,7 @@ table.last-updates th,
 table.last-updates td {
     padding-right: 1em;
 }
+
+section.search-results-pkg dl {
+    margin: 0;
+}

@@ -353,7 +353,7 @@ def search(request):
            .order_by("-similarity", "name", "section", "lang")
     man_results = paginate(request, "page_man", man_results, 20)
 
-    pkg_results = Package.objects.values("repo", "name") \
+    pkg_results = Package.objects.values("repo", "name", "description") \
                                  .filter(name__trigram_similar=term) \
                                  .annotate(similarity=TrigramSimilarity("name", term)) \
                                  .order_by("-similarity", "name", "repo")

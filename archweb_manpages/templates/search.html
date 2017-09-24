@@ -12,7 +12,7 @@
 {% block content %}
 <article>
 
-<section>
+<section class="search-results-man">
     <h1>Results for <em>{{ request.GET.q }}</em> in manual names</h1>
     <ol start="{{ man_results.start_index }}">
     {% for man in man_results %}
@@ -31,11 +31,16 @@
     {% endif %}
 </section>
 
-<section>
+<section class="search-results-pkg">
     <h1>Results for <em>{{ request.GET.q }}</em> in package names</h1>
     <ol start="{{ pkg_results.start_index }}">
     {% for pkg in pkg_results %}
-        <li><a href="{% url 'listing' %}{{ pkg.repo }}/{{ pkg.name }}/">{{ pkg.repo }}/{{ pkg.name }}</a></li>
+        <li>
+            <dl>
+                <dt><a href="{% url 'listing' %}{{ pkg.repo }}/{{ pkg.name }}/">{{ pkg.repo }}/{{ pkg.name }}</a></dt>
+                <dd>{{ pkg.description }}</dd>
+            </dl>
+        </li>
     {% empty %}
         No results.
     {% endfor%}
