@@ -32,7 +32,7 @@
 </section>
 
 <section class="search-results-pkg">
-    <h1>Results for <em>{{ request.GET.q }}</em> in package names</h1>
+    <h1>Results for <em>{{ request.GET.q }}</em> in package names and descriptions</h1>
     <ol start="{{ pkg_results.start_index }}">
     {% for pkg in pkg_results %}
         <li>
