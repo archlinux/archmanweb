@@ -99,6 +99,9 @@ class ManPage(models.Model):
     # (only the <body>, not the whole page served to users)
     html = models.TextField(blank=True, null=True)
 
+    # plain-text version of the content - should be always present to make full-text search possible
+    plaintext = models.TextField(blank=True, null=True)
+
     class Meta:
         unique_together = (
             ('package', 'path'),

@@ -10,3 +10,4 @@ django.setup()
 
 with connection.cursor() as c:
     c.execute("UPDATE archweb_manpages_manpage SET html = NULL WHERE html IS NOT NULL;")
+#    c.execute("UPDATE archweb_manpages_manpage SET plaintext = NULL WHERE plaintext IS NOT NULL;")

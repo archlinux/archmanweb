@@ -52,7 +52,7 @@ def listing(request, *, repo=None, pkgname=None):
 
     db_pkg = None
     man_pages = ManPage.objects.order_by( *sorting_columns ) \
-                               .defer("path", "content", "html")
+                               .defer("path", "content", "html", "plaintext")
 
     if pkgname:
         # check that such package exists
@@ -229,18 +229,26 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
     man_name, man_section, url_lang = _parse_man_name_section_lang(name_section_lang)
     lang = url_lang or "en"
     serve_output_type = url_output_type or "html"
-    if serve_output_type not in {"html", "raw"}:
+    if serve_output_type not in {"html", "txt", "raw"}:
         return HttpResponse("Serving of {} content type is not implemented yet.".format(serve_output_type), status=501)
+
+    deferred_columns = ["path"]
+    if serve_output_type == "html":
+        deferred_columns += ["content", "plaintext"]
+    elif serve_output_type == "txt":
+        deferred_columns += ["content", "html"]
+    elif serve_output_type == "raw":
+        deferred_columns += ["plaintext", "html"]
 
     # find the man page and package containing it
     if man_section is None:
         query = ManPage.objects.filter(name=man_name, lang=lang, **_get_package_filter(repo, pkgname)) \
-                               .defer("path", "content")
+                               .defer(*deferred_columns)
         # TODO: we're trying to guess the newest version, but lexical ordering is too weak
         query = query.order_by("section", "-package__version")[:1]
     else:
         query = ManPage.objects.filter(section=man_section, name=man_name, lang=lang, **_get_package_filter(repo, pkgname)) \
-                               .defer("path", "content")
+                               .defer(*deferred_columns)
         # TODO: we're trying to guess the newest version, but lexical ordering is too weak
         query = query.order_by("-package__version")[:1]
 
@@ -253,7 +261,38 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
         db_pkg = db_man.package
 
     if serve_output_type == "raw":
-        return HttpResponse(db_man.content, content_type="text/plain")
+        return HttpResponse(db_man.content, content_type="text/plain; charset=utf8")
+
+    def preprocess(content):
+        # eliminate the '.so' macro
+        if re.fullmatch(r"^\.so [A-Za-z0-9@._+\-:\[\]\/]+\s*$", content):
+            path = content.split()[1]
+            pp = PurePath(path)
+            target_name = pp.stem
+            target_section = pp.suffix[1:]  # strip the dot
+            # we search only in the same package, otherwise the attribution info provided on the page wouldn't be correct
+            query = ManPage.objects.filter(section=target_section, name=target_name, lang=lang, package_id=db_pkg.id)
+            if len(query) == 0:
+                raise Http404("The requested manual contains a .so reference to a file, "
+                              "which was not found in the same package: {}".format(path))
+            # replacing the content instead of doing a HTTP redirect is closer to the
+            # intention behind the .so macro, because the old name stays in the URL
+            # TODO: with a better database structure we would not have to duplicate the resulting HTML/plaintext
+            # TODO: check that there are no double redirects
+            return query[0].content
+        return content
+
+    if serve_output_type == "txt":
+        if db_man.plaintext is None:
+            content = preprocess(db_man.content)
+            cmd = "mandoc -T utf8"
+            p = subprocess.run(cmd, shell=True, check=True, input=content, encoding="utf-8", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            assert p.stdout
+            # strip mandoc's back-spaced encoding
+            plaintext = re.sub(".\b", "", p.stdout, flags=re.DOTALL)
+            db_man.plaintext = plaintext
+            db_man.save()
+        return HttpResponse(db_man.plaintext, content_type="text/plain; charset=utf8")
 
     # links to other packages providing the same manual
     other_packages = []
@@ -295,25 +334,7 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
 
     # convert the man page to HTML if not already done
     if db_man.html is None:
-        # eliminate the '.so' macro
-        if re.fullmatch(r"^\.so [A-Za-z0-9@._+\-:\[\]\/]+\s*$", db_man.content):
-            path = db_man.content.split()[1]
-            pp = PurePath(path)
-            target_name = pp.stem
-            target_section = pp.suffix[1:]  # strip the dot
-            # we search only in the same package, otherwise the attribution info provided on the page wouldn't be correct
-            query = ManPage.objects.filter(section=target_section, name=target_name, lang=lang, package_id=db_pkg.id)
-            if len(query) == 0:
-                raise Http404("The requested manual contains a .so reference to a file, "
-                              "which was not found in the same package: {}".format(path))
-            # replacing the content instead of doing a HTTP redirect is closer to the
-            # intention behind the .so macro, because the old name stays in the URL
-            # TODO: with a better database structure we would not have to duplicate the resulting HTML
-            # TODO: check that there are no double redirects
-            content = query[0].content
-        else:
-            content = db_man.content
-
+        content = preprocess(db_man.content)
         url_pattern = reverse_man_url("", "", "%N", "%S", lang, "")
         cmd = "mandoc -T html -O fragment,man={}".format(url_pattern)
         p = subprocess.run(cmd, shell=True, check=True, input=content, encoding="utf-8", stdout=subprocess.PIPE, stderr=subprocess.PIPE)

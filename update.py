@@ -169,6 +169,7 @@ def update_man_pages(finder, updated_pkgs):
                     db_man = result[0]
                 db_man.content = content
                 db_man.html = None
+                db_man.plaintext = None
 
                 # validate and save
                 db_man.full_clean()
