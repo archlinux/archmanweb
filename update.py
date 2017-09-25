@@ -168,8 +168,8 @@ def update_man_pages(finder, updated_pkgs):
                 else:
                     db_man = result[0]
                 db_man.content = content
-                db_man.html = None
-                db_man.plaintext = None
+                db_man.content_html = None
+                db_man.content_txt = None
 
                 # validate and save
                 db_man.full_clean()

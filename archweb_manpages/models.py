@@ -1,7 +1,13 @@
+import re
+import subprocess
+from pathlib import PurePath
+
 from django.db import models
 from django.db import connection
 from django.contrib.postgres.indexes import GinIndex
 from django.core.exceptions import ValidationError
+
+from .utils import reverse_man_url, postprocess
 
 # ref: https://stackoverflow.com/a/44962928/4180822
 class TrigramIndex(GinIndex):
@@ -75,6 +81,10 @@ class Package(models.Model):
         return "<Package: arch={}, repo={}, name={}, version={}>".format(self.arch, self.repo, self.name, self.version)
 
 
+class SoelimError(Exception):
+    pass
+
+
 class ManPage(models.Model):
     # package containing the man page
     # NOTE: django emulates ON DELETE, it is not added to the SQL
@@ -97,10 +107,10 @@ class ManPage(models.Model):
 
     # cached HTML version of the manual
     # (only the <body>, not the whole page served to users)
-    html = models.TextField(blank=True, null=True)
+    content_html = models.TextField(blank=True, null=True)
 
     # plain-text version of the content - should be always present to make full-text search possible
-    plaintext = models.TextField(blank=True, null=True)
+    content_txt = models.TextField(blank=True, null=True)
 
     class Meta:
         unique_together = (
@@ -131,6 +141,43 @@ class ManPage(models.Model):
             raise ValidationError("Man section cannot contain dots.")
         if "." in self.lang:
             raise ValidationError("Language tag cannot contain dots.")
+
+    def get_preprocessed_content(self, *, lang, package_id):
+        # eliminate the '.so' macro
+        if re.fullmatch(r"^\.so [A-Za-z0-9@._+\-:\[\]\/]+\s*$", self.content):
+            path = self.content.split()[1]
+            pp = PurePath(path)
+            target_name = pp.stem
+            target_section = pp.suffix[1:]  # strip the dot
+            # we search only in the same package, otherwise the attribution info provided on the page wouldn't be correct
+            query = ManPage.objects.filter(section=target_section, name=target_name, lang=lang, package_id=package_id)
+            if len(query) == 0:
+                raise SoelimError
+            # replacing the content instead of doing a HTTP redirect is closer to the
+            # intention behind the .so macro, because the old name stays in the URL
+            # TODO: with a better database structure we would not have to duplicate the resulting HTML/plaintext
+            # TODO: check that there are no double redirects
+            return query[0].content
+        return self.content
+
+    def get_converted(self, output_type, lang, package_id):
+        assert output_type in {"html", "txt"}
+        column = "content_" + output_type
+
+        # convert the man page to HTML/txt if not already done
+        if getattr(self, column) is None:
+            content = self.get_preprocessed_content(lang=lang, package_id=package_id)
+            if output_type == "html":
+                url_pattern = reverse_man_url("", "", "%N", "%S", lang, "")
+                cmd = "mandoc -T html -O fragment,man={}".format(url_pattern)
+            elif output_type == "txt":
+                cmd = "mandoc -T utf8"
+            p = subprocess.run(cmd, shell=True, check=True, input=content, encoding="utf-8", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            assert p.stdout
+            setattr(self, column, postprocess(p.stdout, output_type, lang))
+            self.save()
+
+        return getattr(self, column)
 
 class SymbolicLink(models.Model):
     # package containing the symlink

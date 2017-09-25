@@ -74,11 +74,17 @@ _xref_pattern = re.compile(r"\<(?P<tag>b|i|strong|em|mark)\>"
                            r"(?P<man_name>[A-Za-z0-9@._+\-:\[\]]+)"
                            r"\<\/\1\>"
                            r"\((?P<section>\d[a-z]{,3})\)")
-def postprocess(html, lang):
-    new_html = _xref_pattern.sub("<a href='" + reverse("index") + "man/" + r"\g<man_name>.\g<section>." + lang +
+_backspace_pattern = re.compile(".\b", flags=re.DOTALL)
+def postprocess(text, content_type, lang):
+    assert content_type in {"html", "txt"}
+    if content_type == "html":
+        return _xref_pattern.sub("<a href='" + reverse("index") + "man/" + r"\g<man_name>.\g<section>." + lang +
                                         "'>\g<man_name>(\g<section>)</a>",
-                                html)
-    return new_html
+                                text)
+    elif content_type == "txt":
+        # strip mandoc's back-spaced encoding
+        return _backspace_pattern.sub("", text)
+
 
 _norm_pattern = re.compile(r"\s+")
 _headings_pattern = re.compile(r"\<h1[^\>]*\>[^\<\>]*"

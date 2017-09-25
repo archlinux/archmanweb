@@ -1,14 +1,10 @@
-import re
-import subprocess
-from pathlib import PurePath
-
 from django.shortcuts import render
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.db.models import Count
 from django.contrib.postgres.search import TrigramSimilarity
 
-from .models import Package, ManPage, SymbolicLink, UpdateLog
-from .utils import reverse_man_url, paginate, postprocess, extract_headings
+from .models import Package, ManPage, SymbolicLink, UpdateLog, SoelimError
+from .utils import reverse_man_url, paginate, extract_headings
 
 def index(request):
     count_man_pages = ManPage.objects.count()
@@ -52,7 +48,7 @@ def listing(request, *, repo=None, pkgname=None):
 
     db_pkg = None
     man_pages = ManPage.objects.order_by( *sorting_columns ) \
-                               .defer("path", "content", "html", "plaintext")
+                               .defer("path", "content", "content_html", "content_txt")
 
     if pkgname:
         # check that such package exists
@@ -234,11 +230,11 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
 
     deferred_columns = ["path"]
     if serve_output_type == "html":
-        deferred_columns += ["content", "plaintext"]
+        deferred_columns += ["content", "content_txt"]
     elif serve_output_type == "txt":
-        deferred_columns += ["content", "html"]
+        deferred_columns += ["content", "content_html"]
     elif serve_output_type == "raw":
-        deferred_columns += ["plaintext", "html"]
+        deferred_columns += ["content_txt", "content_html"]
 
     # find the man page and package containing it
     if man_section is None:
@@ -263,36 +259,14 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
     if serve_output_type == "raw":
         return HttpResponse(db_man.content, content_type="text/plain; charset=utf8")
 
-    def preprocess(content):
-        # eliminate the '.so' macro
-        if re.fullmatch(r"^\.so [A-Za-z0-9@._+\-:\[\]\/]+\s*$", content):
-            path = content.split()[1]
-            pp = PurePath(path)
-            target_name = pp.stem
-            target_section = pp.suffix[1:]  # strip the dot
-            # we search only in the same package, otherwise the attribution info provided on the page wouldn't be correct
-            query = ManPage.objects.filter(section=target_section, name=target_name, lang=lang, package_id=db_pkg.id)
-            if len(query) == 0:
-                raise Http404("The requested manual contains a .so reference to a file, "
-                              "which was not found in the same package: {}".format(path))
-            # replacing the content instead of doing a HTTP redirect is closer to the
-            # intention behind the .so macro, because the old name stays in the URL
-            # TODO: with a better database structure we would not have to duplicate the resulting HTML/plaintext
-            # TODO: check that there are no double redirects
-            return query[0].content
-        return content
+    try:
+        converted_content = db_man.get_converted(serve_output_type, lang, db_pkg.id)
+    except SoelimError:
+        raise Http404("The requested manual contains a .so reference to a file, "
+                      "which was not found in the same package: {}".format(path))
 
     if serve_output_type == "txt":
-        if db_man.plaintext is None:
-            content = preprocess(db_man.content)
-            cmd = "mandoc -T utf8"
-            p = subprocess.run(cmd, shell=True, check=True, input=content, encoding="utf-8", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            assert p.stdout
-            # strip mandoc's back-spaced encoding
-            plaintext = re.sub(".\b", "", p.stdout, flags=re.DOTALL)
-            db_man.plaintext = plaintext
-            db_man.save()
-        return HttpResponse(db_man.plaintext, content_type="text/plain; charset=utf8")
+        return HttpResponse(converted_content, content_type="text/plain; charset=utf8")
 
     # links to other packages providing the same manual
     other_packages = []
@@ -332,18 +306,8 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
     for row in query:
         other_sections.add(row["section"])
 
-    # convert the man page to HTML if not already done
-    if db_man.html is None:
-        content = preprocess(db_man.content)
-        url_pattern = reverse_man_url("", "", "%N", "%S", lang, "")
-        cmd = "mandoc -T html -O fragment,man={}".format(url_pattern)
-        p = subprocess.run(cmd, shell=True, check=True, input=content, encoding="utf-8", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        assert p.stdout
-        db_man.html = postprocess(p.stdout, lang)
-        db_man.save()
-
     # this is pretty fast, no caching
-    headings = extract_headings(db_man.html)
+    headings = extract_headings(converted_content)
 
     context = {
         "lang": lang,  # used in base.html
@@ -353,6 +317,7 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
         "url_output_type": url_output_type,
         "pkg": db_pkg,
         "man": db_man,
+        "man_page_content": converted_content,
         "headings": headings,
         "other_packages": other_packages,
         "other_languages": sorted(other_languages),
