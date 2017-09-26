@@ -293,12 +293,12 @@ if __name__ == "__main__":
     # VACUUM cannot run inside a transaction block
     if updated_pkgs or args.only_packages is not None:
         if connection.vendor == "postgresql":
-            logger.info("Running VACUUM ANALYZE on our tables...")
+            logger.info("Running VACUUM FULL ANALYZE on our tables...")
             for Model in [Package, ManPage, SymbolicLink]:
                 table = Model.objects.model._meta.db_table
                 logger.info("--> {}".format(table))
                 with connection.cursor() as cursor:
-                    cursor.execute("VACUUM ANALYZE {};".format(table))
+                    cursor.execute("VACUUM FULL ANALYZE {};".format(table))
 
     end = datetime.datetime.now(tz=datetime.timezone.utc)
 

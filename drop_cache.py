@@ -11,3 +11,6 @@ django.setup()
 with connection.cursor() as c:
     c.execute("UPDATE archweb_manpages_manpage SET content_html = NULL WHERE content_html IS NOT NULL;")
     c.execute("UPDATE archweb_manpages_manpage SET content_txt = NULL WHERE content_txt IS NOT NULL;")
+
+    if connection.vendor == "postgresql":
+        c.execute("VACUUM FULL archweb_manpages_manpage;")
