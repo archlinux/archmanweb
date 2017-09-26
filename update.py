@@ -273,31 +273,18 @@ if __name__ == "__main__":
                         help="keep downloaded package tarballs in the cache directory")
     args = parser.parse_args()
 
+    start = datetime.datetime.now(tz=datetime.timezone.utc)
+
     finder = ManPagesFinder(args.cache_dir)
     finder.refresh()
 
     # everything in a single transaction
     with transaction.atomic():
-        start = datetime.datetime.now(tz=datetime.timezone.utc)
         updated_pkgs = update_packages(finder, force=args.force, only_repos=args.only_repos)
         if args.only_packages is None:
             count_updated_pages = update_man_pages(finder, updated_pkgs)
         else:
             count_updated_pages = update_man_pages(finder, [p for p in updated_pkgs if p.name in args.only_packages])
-
-        end = datetime.datetime.now(tz=datetime.timezone.utc)
-
-        # log update
-        log = UpdateLog()
-        log.timestamp = start
-        log.duration = end - start
-        log.updated_pkgs = len(updated_pkgs)
-        log.updated_pages = count_updated_pages
-        log.stats_count_man_pages = ManPage.objects.count()
-        log.stats_count_symlinks = SymbolicLink.objects.count()
-        log.stats_count_all_pkgs = Package.objects.count()
-        log.stats_count_pkgs_with_mans = ManPage.objects.aggregate(Count("package_id", distinct=True))["package_id__count"]
-        log.save()
 
     # this is called outside of the transaction, so that the cache can be reused on errors
     if args.keep_tarballs is False:
@@ -312,3 +299,17 @@ if __name__ == "__main__":
                 logger.info("--> {}".format(table))
                 with connection.cursor() as cursor:
                     cursor.execute("VACUUM ANALYZE {};".format(table))
+
+    end = datetime.datetime.now(tz=datetime.timezone.utc)
+
+    # log update
+    log = UpdateLog()
+    log.timestamp = start
+    log.duration = end - start
+    log.updated_pkgs = len(updated_pkgs)
+    log.updated_pages = count_updated_pages
+    log.stats_count_man_pages = ManPage.objects.count()
+    log.stats_count_symlinks = SymbolicLink.objects.count()
+    log.stats_count_all_pkgs = Package.objects.count()
+    log.stats_count_pkgs_with_mans = ManPage.objects.aggregate(Count("package_id", distinct=True))["package_id__count"]
+    log.save()
