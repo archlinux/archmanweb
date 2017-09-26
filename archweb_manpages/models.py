@@ -160,6 +160,17 @@ class ManPage(models.Model):
             return query[0].content
         return self.content
 
+    @staticmethod
+    def _convert(content, output_type, lang=None):
+        if output_type == "html":
+            url_pattern = reverse_man_url("", "", "%N", "%S", lang, "")
+            cmd = "mandoc -T html -O fragment,man={}".format(url_pattern)
+        elif output_type == "txt":
+            cmd = "mandoc -T utf8"
+        p = subprocess.run(cmd, shell=True, check=True, input=content, encoding="utf-8", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        assert p.stdout
+        return p.stdout
+
     def get_converted(self, output_type, lang, package_id):
         assert output_type in {"html", "txt"}
         column = "content_" + output_type
@@ -167,14 +178,9 @@ class ManPage(models.Model):
         # convert the man page to HTML/txt if not already done
         if getattr(self, column) is None:
             content = self.get_preprocessed_content(lang=lang, package_id=package_id)
-            if output_type == "html":
-                url_pattern = reverse_man_url("", "", "%N", "%S", lang, "")
-                cmd = "mandoc -T html -O fragment,man={}".format(url_pattern)
-            elif output_type == "txt":
-                cmd = "mandoc -T utf8"
-            p = subprocess.run(cmd, shell=True, check=True, input=content, encoding="utf-8", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            assert p.stdout
-            setattr(self, column, postprocess(p.stdout, output_type, lang))
+            content = self._convert(content)
+            content = postprocess(content, output_type, lang)
+            setattr(self, column, content)
             self.save()
 
         return getattr(self, column)
