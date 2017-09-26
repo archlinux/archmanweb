@@ -150,7 +150,7 @@ class ManPage(models.Model):
             target_name = pp.stem
             target_section = pp.suffix[1:]  # strip the dot
             # we search only in the same package, otherwise the attribution info provided on the page wouldn't be correct
-            query = ManPage.objects.filter(section=target_section, name=target_name, lang=lang, package_id=package_id)
+            query = ManPage.objects.filter(section=target_section, name=target_name, lang=lang, package_id=package_id).only("content")
             if len(query) == 0:
                 raise SoelimError
             # replacing the content instead of doing a HTTP redirect is closer to the
