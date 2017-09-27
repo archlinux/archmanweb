@@ -86,6 +86,9 @@ class SoelimError(Exception):
 
 
 class ManPage(models.Model):
+    # would be created automatically anyway
+    id = models.AutoField(primary_key=True)
+
     # package containing the man page
     # NOTE: django emulates ON DELETE, it is not added to the SQL
     package = models.ForeignKey(Package, on_delete=models.CASCADE)
@@ -93,17 +96,17 @@ class ManPage(models.Model):
     # path of the file relative to /
     path = models.TextField()
 
-    # section number (remember that there are multi-character sections like 3p, 3am, 3perl, ...)
-    section = models.TextField()
-
     # man page name
     name = models.TextField()
 
-    # content of the man page
-    content = models.TextField()
+    # section number (remember that there are multi-character sections like 3p, 3am, 3perl, ...)
+    section = models.TextField()
 
     # language tag
     lang = models.TextField(default="en")
+
+    # content of the man page
+    content = models.TextField()
 
     # cached HTML version of the manual
     # (only the <body>, not the whole page served to users)
@@ -186,6 +189,9 @@ class ManPage(models.Model):
         return getattr(self, column)
 
 class SymbolicLink(models.Model):
+    # would be created automatically anyway
+    id = models.AutoField(primary_key=True)
+
     # package containing the symlink
     # NOTE: django emulates ON DELETE, it is not added to the SQL
     package = models.ForeignKey(Package, on_delete=models.CASCADE)
