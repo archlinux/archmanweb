@@ -181,7 +181,7 @@ class ManPage(models.Model):
         # convert the man page to HTML/txt if not already done
         if getattr(self, column) is None:
             content = self.get_preprocessed_content(lang=lang, package_id=package_id)
-            content = self._convert(content)
+            content = self._convert(content, output_type, lang)
             content = postprocess(content, output_type, lang)
             setattr(self, column, content)
             self.save()
