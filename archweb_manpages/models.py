@@ -250,6 +250,9 @@ class UpdateLog(models.Model):
     stats_count_all_pkgs = models.IntegerField()
     stats_count_pkgs_with_mans = models.IntegerField()
 
+    # return code of the convert_txt program
+    convert_txt_returncode = models.IntegerField(null=True)
+
     class HtmlTableConfig:
         columns = (
             "timestamp",

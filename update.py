@@ -5,6 +5,7 @@ import os.path
 import logging
 import datetime
 from pathlib import PurePath
+import subprocess
 
 import chardet
 import pyalpm
@@ -290,6 +291,15 @@ if __name__ == "__main__":
     if args.keep_tarballs is False:
         finder.clear_pkgcache()
 
+    # update plain-text (convert_txt is fast, but without preprocessor)
+    convert_txt_returncode = None
+    if os.path.isfile("./convert_txt"):
+        _dbs = django.conf.settings.DATABASES["default"]
+        cmd = "./convert_txt --target {}@{} --user {} --password {}" \
+              .format(_dbs["NAME"], _dbs["HOST"] or "localhost", _dbs["USER"], _dbs["PASSWORD"])
+        p = subprocess.run(cmd, shell=True)
+        convert_txt_returncode = p.returncode
+
     # VACUUM cannot run inside a transaction block
     if updated_pkgs or args.only_packages is not None:
         if connection.vendor == "postgresql":
@@ -312,4 +322,5 @@ if __name__ == "__main__":
     log.stats_count_symlinks = SymbolicLink.objects.count()
     log.stats_count_all_pkgs = Package.objects.count()
     log.stats_count_pkgs_with_mans = ManPage.objects.aggregate(Count("package_id", distinct=True))["package_id__count"]
+    log.convert_txt_returncode = convert_txt_returncode
     log.save()
