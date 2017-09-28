@@ -1,1 +1,6 @@
 /.cache
+
+/convert_txt
+/convert_txt.c
+/convert_txt.d
+/convert_txt.o

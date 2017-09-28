@@ -1,0 +1,223 @@
+// vim: ft=c
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <getopt.h>
+#include <unistd.h>  // fork, dup2, execlp
+#include <sys/wait.h>  // waitpid
+
+// reference: https://www.postgresql.org/docs/current/static/ecpg.html
+
+// failsafe against SQL errors
+EXEC SQL WHENEVER SQLWARNING SQLPRINT;
+EXEC SQL WHENEVER SQLERROR STOP;
+
+EXEC SQL BEGIN DECLARE SECTION;
+char* db_target = NULL;
+char* db_user = NULL;
+char* db_password = NULL;
+EXEC SQL END DECLARE SECTION;
+
+void die(int status)
+{
+    EXEC SQL ROLLBACK;
+    EXEC SQL DISCONNECT ALL;
+    exit(status);
+}
+
+bool run_mandoc(int content_length, char* content, int* content_txt_length, char** content_txt, size_t* content_txt_allocated)
+{
+    bool ret = false;
+
+    // pipes for the communication
+    int pipeIn[2];
+    int pipeOut[2];
+    int pipeErr[2];
+    pipe(pipeIn);
+    pipe(pipeOut);
+    pipe(pipeErr);
+
+    pid_t cpid = fork();
+    if (cpid == -1) {
+        perror("fork");
+        exit(1);
+    }
+
+    if (cpid == 0) // if I am the child then
+    {
+        // close the unused sides of the pipes
+        close(pipeIn[1]);
+        close(pipeOut[0]);
+        close(pipeErr[0]);
+
+        // redirect std* to the pipes
+        dup2(pipeIn[0], STDIN_FILENO);
+        dup2(pipeOut[1], STDOUT_FILENO);
+        dup2(pipeErr[1], STDERR_FILENO);
+
+        execlp("mandoc", "mandoc", "-Tutf8", NULL);
+    }
+    else // if I am the parent then
+    {
+        // close the unused sides of the pipes
+        close(pipeIn[0]);
+        close(pipeOut[1]);
+        close(pipeErr[1]);
+
+        // send the content to the child's stdin
+        write(pipeIn[1], content, content_length);
+
+        // close the write-end of the pipe, thus sending EOF to the reader
+        close(pipeIn[1]);
+
+        // read the mandoc's output
+        *content_txt_length = 0;
+        const int bufsize = 4096;
+        const int alloc_chunksize = 65536;
+        char buffer[bufsize];
+        int n_read;
+        while ( (n_read = read(pipeOut[0], buffer, bufsize)) > 0) {
+            // >= is important to reserve space for the terminating \0
+            if (*content_txt_length + n_read >= *content_txt_allocated) {
+                char* new_content = realloc(*content_txt, *content_txt_allocated + alloc_chunksize);
+                if (new_content == NULL) {
+                    free(*content_txt);
+                    perror("realloc");
+                    die(1);
+                }
+                *content_txt = new_content;
+                *content_txt_allocated += alloc_chunksize;
+            }
+            memcpy(*content_txt + *content_txt_length, buffer, n_read);
+            *content_txt_length += n_read;
+        }
+        (*content_txt)[*content_txt_length] = '\0';
+
+        // wait for the child to exit
+        // (just in case, it should exit right after we read the EOF)
+        int status;
+        if (waitpid(cpid, &status, 0) == -1) {
+            perror("waitpid");
+            die(1);
+        }
+
+        // close the read-end of the pipes
+        close(pipeOut[0]);
+        close(pipeErr[0]);
+
+        ret = status == 0;
+    }
+
+    return ret;
+}
+
+void convert()
+{
+    EXEC SQL CONNECT TO :db_target AS main_connection USER :db_user USING :db_password;
+
+    // if there are multiple connections: EXEC SQL SET CONNECTION connection-name;
+    // or EXEC SQL AT connection-name SELECT ...;
+    
+    EXEC SQL DECLARE mans CURSOR FOR
+        SELECT id, octet_length(content) FROM archweb_manpages_manpage
+        WHERE content_txt IS NULL
+        ORDER BY id;
+    EXEC SQL OPEN mans;
+
+    EXEC SQL PREPARE select_content FROM "SELECT content FROM archweb_manpages_manpage WHERE id = ?";
+    EXEC SQL PREPARE update_content_txt FROM "UPDATE archweb_manpages_manpage SET content_txt = regexp_replace(?, '.\b', '', 'g') WHERE id = ?";
+    
+    EXEC SQL BEGIN DECLARE SECTION;
+        int id;
+        int content_length;
+        char* content = NULL;
+        char* content_txt = NULL;
+    EXEC SQL END DECLARE SECTION;
+
+    size_t allocated_content = 0;
+    size_t allocated_content_txt = 0;
+
+    // when end of result set reached, break out of while loop
+    EXEC SQL WHENEVER NOT FOUND DO BREAK;
+
+    while (1) {
+        EXEC SQL FETCH mans INTO :id, :content_length;
+        printf("%d, %d bytes \n", id, content_length);
+
+        if (allocated_content < content_length + 1) {
+            char* new_content = realloc(content, content_length + 1);
+            if (new_content == NULL) {
+                free(content);
+                perror("realloc");
+                die(1);
+            }
+            content = new_content;
+            allocated_content = content_length + 1;
+        }
+
+        // NOTE: .so elimination is not necessary for full-text search, it would
+        // only introduce duplicate results
+        EXEC SQL EXECUTE select_content INTO :content USING :id;
+
+        int content_txt_length = 0;
+        bool success = run_mandoc(content_length, content, &content_txt_length, &content_txt, &allocated_content_txt);
+
+        if (success)
+            EXEC SQL EXECUTE update_content_txt USING :content_txt, :id;
+    }
+
+    free(content);
+    free(content_txt);
+
+    EXEC SQL CLOSE mans;
+    EXEC SQL DEALLOCATE PREPARE select_content;
+    EXEC SQL DEALLOCATE PREPARE update_content_txt;
+
+    EXEC SQL COMMIT;
+    EXEC SQL DISCONNECT ALL;
+}
+
+int main(int argc, char* argv[])
+{
+    static struct option long_options[] = {
+        {"target",   required_argument, 0, 't'},
+        {"user",     required_argument, 0, 'u'},
+        {"password", required_argument, 0, 'p'},
+        {0, 0, 0, 0}
+    };
+
+    int option_index = 0;
+
+    while (1) {
+        int opt = getopt_long(argc, argv, "", long_options, &option_index);
+
+        // end of options
+        if (opt == -1)
+            break;
+
+        switch (opt)
+        {
+            case 't':
+                db_target = optarg;
+                break;
+            case 'u':
+                db_user = optarg;
+                break;
+            case 'p':
+                db_password = optarg;
+                break;
+            default:
+                exit(1);
+        }
+    }
+
+    if (db_target == NULL || db_user == NULL || db_password == NULL) {
+        fprintf(stderr, "usage: %s --target <dbname@host> --user <username> --password <password>\n", argv[0]);
+        exit(1);
+    }
+
+    printf("Starting conversion...\n");
+    convert();
+    
+    return 0;
+}
