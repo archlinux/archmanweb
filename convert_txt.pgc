@@ -118,9 +118,12 @@ void convert()
     // if there are multiple connections: EXEC SQL SET CONNECTION connection-name;
     // or EXEC SQL AT connection-name SELECT ...;
     
+    // NOTE: .so elimination is not necessary for full-text search, it would
+    // only introduce duplicate results. Therefore we skip all manuals
+    // containing the .so macro right in the SQL query.
     EXEC SQL DECLARE mans CURSOR FOR
         SELECT id, octet_length(content) FROM archweb_manpages_manpage
-        WHERE content_txt IS NULL
+        WHERE content_txt IS NULL AND content !~ '(?n)^\.so .*$'
         ORDER BY id;
     EXEC SQL OPEN mans;
 
@@ -155,8 +158,6 @@ void convert()
             allocated_content = content_length + 1;
         }
 
-        // NOTE: .so elimination is not necessary for full-text search, it would
-        // only introduce duplicate results
         EXEC SQL EXECUTE select_content INTO :content USING :id;
 
         int content_txt_length = 0;
