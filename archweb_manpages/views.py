@@ -262,8 +262,7 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
     try:
         converted_content = db_man.get_converted(serve_output_type, lang, db_pkg.id)
     except SoelimError:
-        raise Http404("The requested manual contains a .so reference to a file, "
-                      "which was not found in the same package: {}".format(path))
+        raise Http404("The requested manual contains a .so reference to an unknown file.")
 
     if serve_output_type == "txt":
         return HttpResponse(converted_content, content_type="text/plain; charset=utf8")

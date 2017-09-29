@@ -146,21 +146,31 @@ class ManPage(models.Model):
             raise ValidationError("Language tag cannot contain dots.")
 
     def get_preprocessed_content(self, *, lang, package_id):
-        # eliminate the '.so' macro
+        # Eliminate the '.so' macro
+        # Replacing the content instead of doing a HTTP redirect is closer to the
+        # intention behind the .so macro, because the old name stays in the URL.
+        # TODO: with a better database structure we would not have to duplicate the resulting HTML/plaintext
+        # TODO: check that there are no double redirects
         if re.fullmatch(r"^\.so [A-Za-z0-9@._+\-:\[\]\/]+\s*$", self.content):
             path = self.content.split()[1]
             pp = PurePath(path)
             target_name = pp.stem
             target_section = pp.suffix[1:]  # strip the dot
-            # we search only in the same package, otherwise the attribution info provided on the page wouldn't be correct
-            query = ManPage.objects.filter(section=target_section, name=target_name, lang=lang, package_id=package_id).only("content")
+            # There are actually packages redirecting their manuals to other packages,
+            # e.g. shorewall6 -> shorewall. The attribution info provided on the page
+            # isn't entirely correct, but that's what the authors intended...
+            query = ManPage.objects.filter(section=target_section, name=target_name, lang=lang).values("content", "package_id")[:2]
+            query = list(query)
             if len(query) == 0:
                 raise SoelimError
-            # replacing the content instead of doing a HTTP redirect is closer to the
-            # intention behind the .so macro, because the old name stays in the URL
-            # TODO: with a better database structure we would not have to duplicate the resulting HTML/plaintext
-            # TODO: check that there are no double redirects
-            return query[0].content
+            elif len(query) == 1:
+                return query[0]["content"]
+            else:
+                # if the query is ambiguous, the only thing we can try is to check package_id
+                try:
+                    return ManPage.objects.values_list("content", flat=True).get(section=target_section, name=target_name, lang=lang, package_id=package_id)
+                except ManPage.DoesNotExist:
+                    raise SoelimError
         return self.content
 
     @staticmethod
