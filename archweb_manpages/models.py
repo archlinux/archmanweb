@@ -171,12 +171,12 @@ class ManPage(models.Model):
                 raise SoelimError
             elif len(query) == 1:
                 return query[0]["content"]
-            else:
-                # if the query is ambiguous, the only thing we can try is to check package_id
-                try:
-                    return ManPage.objects.values_list("content", flat=True).get(section=target_section, name=target_name, lang=lang, package_id=package_id)
-                except ManPage.DoesNotExist:
-                    raise SoelimError
+
+            # if the query is ambiguous, the only thing we can try is to check package_id
+            try:
+                return ManPage.objects.values_list("content", flat=True).get(section=target_section, name=target_name, lang=lang, package_id=package_id)
+            except ManPage.DoesNotExist:
+                raise SoelimError
 
         return self.content
 
