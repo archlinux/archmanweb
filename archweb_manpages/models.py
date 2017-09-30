@@ -5,6 +5,7 @@ from pathlib import PurePath
 from django.db import models
 from django.db import connection
 from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 
 from .utils import reverse_man_url, postprocess
@@ -64,8 +65,7 @@ class Package(models.Model):
     description = models.TextField()
     url = models.TextField(null=True)  # nullable in pacman
     build_date = models.DateTimeField()
-
-    # TODO: interesting ArrayField (PostgreSQL-only) attributes: licenses
+    licenses = ArrayField(models.TextField())
 
     class Meta:
         unique_together = (

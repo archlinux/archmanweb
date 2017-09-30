@@ -35,6 +35,10 @@
             <td><a href="{{ pkg.url }}">{{ pkg.url }}</a></td>
         </tr>
         <tr>
+            <td>Licenses:</td>
+            <td>{{ pkg.licenses | join:", " }}</td>
+        </tr>
+        <tr>
             <td>Manuals:</td>
             <td><a href="{% url 'listing' %}{{ pkg.repo }}/{{ pkg.name }}/">{% url 'listing' %}{{ pkg.repo }}/{{ pkg.name }}/</a></td>
         </tr>

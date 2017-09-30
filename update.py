@@ -98,6 +98,7 @@ def update_packages(finder, *, force=False, only_repos=None):
             db_package.description = pkg.desc
             db_package.url = pkg.url
             db_package.build_date = datetime.datetime.fromtimestamp(pkg.builddate, tz=datetime.timezone.utc)
+            db_package.licenses = pkg.licenses
             db_package.save()
 
     # delete old packages from the django database
