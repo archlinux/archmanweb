@@ -18,7 +18,7 @@ import django
 django.setup()
 from django.db import connection, transaction
 from django.db.models import Count
-from archweb_manpages.models import Package, ManPage, SymbolicLink, UpdateLog
+from archweb_manpages.models import Package, Content, ManPage, SymbolicLink, UpdateLog, SoelimError
 
 
 logger = logging.getLogger(__name__)
@@ -160,22 +160,27 @@ def update_man_pages(finder, updated_pkgs):
                     if ManPage.objects.filter(package_id=db_pkg.id, name=man_name, section=man_section, lang=man_lang).count() > 0:
                         logger.debug("Skipping man page with duplicate encoding: {}".format(path))
                         continue
+                    db_content = Content()
                     db_man = ManPage()
                     db_man.package_id = db_pkg.id
                     db_man.path = path
                     db_man.name = man_name
                     db_man.section = man_section
                     db_man.lang = man_lang
+                    db_man.content = db_content
+
+                    # validate and save
+                    db_man.full_clean()
+                    # TODO: this might still fail if there are multiple foo.1 in different directories and same language
+                    db_man.save()
                 else:
                     db_man = result[0]
-                db_man.content = content
-                db_man.content_html = None
-                db_man.content_txt = None
+                    db_content = db_man.content
 
-                # validate and save
-                db_man.full_clean()
-                # TODO: this might still fail if there are multiple foo.1 in different directories and same language
-                db_man.save()
+                db_content.raw = content
+                db_content.html = None
+                db_content.txt = None
+                db_content.save()
 
                 updated_pages += 1
 
@@ -249,6 +254,9 @@ def update_man_pages(finder, updated_pkgs):
             if db_man.path not in paths:
                 ManPage.objects.filter(package_id=db_pkg.id, path=db_man.path).delete()
 
+    # delete unreferenced rows from Content
+    unreferenced = Content.objects.filter(manpage_content__isnull=True).delete()
+
     return updated_pages
 
 
@@ -300,11 +308,26 @@ if __name__ == "__main__":
         p = subprocess.run(cmd, shell=True)
         convert_txt_returncode = p.returncode
 
+    # update remaining plain-text which convert_txt could not handle
+    # (one transaction per update, otherwise we might hit memory allocation error)
+    def worker(man):
+        try:
+            man.get_converted("txt")
+        except SoelimError:
+            logger.error("SoelimError while converting {}.{}.{} to txt".format(man.name, man.section, man.lang))
+        except subprocess.CalledProcessError as e:
+            logger.error("CalledProcessError while converting {}.{}.{} to txt:\nreturncode = {}\nstderr = {}"
+                         .format(man.name, man.section, man.lang, e.returncode, e.stderr))
+    queryset = ManPage.objects.only("package", "lang", "content_id", "converted_content_id").filter(content__txt=None).iterator()
+    import concurrent.futures
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+        executor.map(worker, queryset)
+
     # VACUUM cannot run inside a transaction block
     if updated_pkgs or args.only_packages is not None:
         if connection.vendor == "postgresql":
             logger.info("Running VACUUM FULL ANALYZE on our tables...")
-            for Model in [Package, ManPage, SymbolicLink]:
+            for Model in [Package, Content, ManPage, SymbolicLink]:
                 table = Model.objects.model._meta.db_table
                 logger.info("--> {}".format(table))
                 with connection.cursor() as cursor:

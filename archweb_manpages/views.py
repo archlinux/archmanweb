@@ -47,8 +47,7 @@ def listing(request, *, repo=None, pkgname=None):
         raise HttpResponse("Unknown sorting parameter: {}".format(sorting), status=400)
 
     db_pkg = None
-    man_pages = ManPage.objects.order_by( *sorting_columns ) \
-                               .defer("path", "content", "content_html", "content_txt")
+    man_pages = ManPage.objects.order_by( *sorting_columns ).defer("path")
 
     if pkgname:
         # check that such package exists
@@ -228,23 +227,15 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
     if serve_output_type not in {"html", "txt", "raw"}:
         return HttpResponse("Serving of {} content type is not implemented yet.".format(serve_output_type), status=501)
 
-    deferred_columns = ["path"]
-    if serve_output_type == "html":
-        deferred_columns += ["content", "content_txt"]
-    elif serve_output_type == "txt":
-        deferred_columns += ["content", "content_html"]
-    elif serve_output_type == "raw":
-        deferred_columns += ["content_txt", "content_html"]
-
     # find the man page and package containing it
     if man_section is None:
         query = ManPage.objects.filter(name=man_name, lang=lang, **_get_package_filter(repo, pkgname)) \
-                               .defer(*deferred_columns)
+                               .defer("path")
         # TODO: we're trying to guess the newest version, but lexical ordering is too weak
         query = query.order_by("section", "-package__version")[:1]
     else:
         query = ManPage.objects.filter(section=man_section, name=man_name, lang=lang, **_get_package_filter(repo, pkgname)) \
-                               .defer(*deferred_columns)
+                               .defer("path")
         # TODO: we're trying to guess the newest version, but lexical ordering is too weak
         query = query.order_by("-package__version")[:1]
 
@@ -257,10 +248,10 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
         db_pkg = db_man.package
 
     if serve_output_type == "raw":
-        return HttpResponse(db_man.content, content_type="text/plain; charset=utf8")
+        return HttpResponse(db_man.content.raw, content_type="text/plain; charset=utf8")
 
     try:
-        converted_content = db_man.get_converted(serve_output_type, lang, db_pkg.id)
+        converted_content = db_man.get_converted(serve_output_type)
     except SoelimError:
         raise Http404("The requested manual contains a .so reference to an unknown file.")
 

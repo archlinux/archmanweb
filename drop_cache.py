@@ -9,8 +9,9 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
 django.setup()
 
 with connection.cursor() as c:
-    c.execute("UPDATE archweb_manpages_manpage SET content_html = NULL WHERE content_html IS NOT NULL;")
-    c.execute("UPDATE archweb_manpages_manpage SET content_txt = NULL WHERE content_txt IS NOT NULL;")
+    c.execute("UPDATE archweb_manpages_content SET html = NULL WHERE html IS NOT NULL;")
+    c.execute("UPDATE archweb_manpages_content SET txt = NULL WHERE txt IS NOT NULL;")
+    c.execute("UPDATE archweb_manpages_manpage SET converted_content_id = NULL WHERE converted_content_id IS NOT NULL;")
 
     if connection.vendor == "postgresql":
-        c.execute("VACUUM FULL archweb_manpages_manpage;")
+        c.execute("VACUUM FULL archweb_manpages_content;")

@@ -25,7 +25,7 @@ void die(int status)
     exit(status);
 }
 
-bool run_mandoc(int content_length, char* content, int* content_txt_length, char** content_txt, size_t* content_txt_allocated)
+bool run_mandoc(int raw_length, char* raw, int* txt_length, char** txt, size_t* txt_allocated)
 {
     bool ret = false;
 
@@ -65,33 +65,33 @@ bool run_mandoc(int content_length, char* content, int* content_txt_length, char
         close(pipeErr[1]);
 
         // send the content to the child's stdin
-        write(pipeIn[1], content, content_length);
+        write(pipeIn[1], raw, raw_length);
 
         // close the write-end of the pipe, thus sending EOF to the reader
         close(pipeIn[1]);
 
         // read the mandoc's output
-        *content_txt_length = 0;
+        *txt_length = 0;
         const int bufsize = 4096;
         const int alloc_chunksize = 65536;
         char buffer[bufsize];
         int n_read;
         while ( (n_read = read(pipeOut[0], buffer, bufsize)) > 0) {
             // >= is important to reserve space for the terminating \0
-            if (*content_txt_length + n_read >= *content_txt_allocated) {
-                char* new_content = realloc(*content_txt, *content_txt_allocated + alloc_chunksize);
+            if (*txt_length + n_read >= *txt_allocated) {
+                char* new_content = realloc(*txt, *txt_allocated + alloc_chunksize);
                 if (new_content == NULL) {
-                    free(*content_txt);
+                    free(*txt);
                     perror("realloc");
                     die(1);
                 }
-                *content_txt = new_content;
-                *content_txt_allocated += alloc_chunksize;
+                *txt = new_content;
+                *txt_allocated += alloc_chunksize;
             }
-            memcpy(*content_txt + *content_txt_length, buffer, n_read);
-            *content_txt_length += n_read;
+            memcpy(*txt + *txt_length, buffer, n_read);
+            *txt_length += n_read;
         }
-        (*content_txt)[*content_txt_length] = '\0';
+        (*txt)[*txt_length] = '\0';
 
         // wait for the child to exit
         // (just in case, it should exit right after we read the EOF)
@@ -121,58 +121,58 @@ void convert()
     // NOTE: .so elimination is not necessary for full-text search, it would
     // only introduce duplicate results. Therefore we skip all manuals
     // containing the .so macro right in the SQL query.
-    EXEC SQL DECLARE mans CURSOR FOR
-        SELECT id, octet_length(content) FROM archweb_manpages_manpage
-        WHERE content_txt IS NULL AND content !~ '(?n)^\.so .*$'
+    EXEC SQL DECLARE content CURSOR FOR
+        SELECT id, octet_length(raw) FROM archweb_manpages_content
+        WHERE txt IS NULL AND raw !~ '(?n)^\.so .*$'
         ORDER BY id;
-    EXEC SQL OPEN mans;
+    EXEC SQL OPEN content;
 
-    EXEC SQL PREPARE select_content FROM "SELECT content FROM archweb_manpages_manpage WHERE id = ?";
-    EXEC SQL PREPARE update_content_txt FROM "UPDATE archweb_manpages_manpage SET content_txt = regexp_replace(?, '.\b', '', 'g') WHERE id = ?";
+    EXEC SQL PREPARE select_raw FROM "SELECT raw FROM archweb_manpages_content WHERE id = ?";
+    EXEC SQL PREPARE update_txt FROM "UPDATE archweb_manpages_content SET txt = regexp_replace(?, '.\b', '', 'g') WHERE id = ?";
     
     EXEC SQL BEGIN DECLARE SECTION;
         int id;
-        int content_length;
-        char* content = NULL;
-        char* content_txt = NULL;
+        int raw_length;
+        char* raw = NULL;
+        char* txt = NULL;
     EXEC SQL END DECLARE SECTION;
 
-    size_t allocated_content = 0;
-    size_t allocated_content_txt = 0;
+    size_t allocated_raw = 0;
+    size_t allocated_txt = 0;
 
     // when end of result set reached, break out of while loop
     EXEC SQL WHENEVER NOT FOUND DO BREAK;
 
     while (1) {
-        EXEC SQL FETCH mans INTO :id, :content_length;
-        printf("%d, %d bytes \n", id, content_length);
+        EXEC SQL FETCH content INTO :id, :raw_length;
+        printf("%d, %d bytes \n", id, raw_length);
 
-        if (allocated_content < content_length + 1) {
-            char* new_content = realloc(content, content_length + 1);
+        if (allocated_raw < raw_length + 1) {
+            char* new_content = realloc(raw, raw_length + 1);
             if (new_content == NULL) {
-                free(content);
+                free(raw);
                 perror("realloc");
                 die(1);
             }
-            content = new_content;
-            allocated_content = content_length + 1;
+            raw = new_content;
+            allocated_raw = raw_length + 1;
         }
 
-        EXEC SQL EXECUTE select_content INTO :content USING :id;
+        EXEC SQL EXECUTE select_raw INTO :raw USING :id;
 
-        int content_txt_length = 0;
-        bool success = run_mandoc(content_length, content, &content_txt_length, &content_txt, &allocated_content_txt);
+        int txt_length = 0;
+        bool success = run_mandoc(raw_length, raw, &txt_length, &txt, &allocated_txt);
 
         if (success)
-            EXEC SQL EXECUTE update_content_txt USING :content_txt, :id;
+            EXEC SQL EXECUTE update_txt USING :txt, :id;
     }
 
-    free(content);
-    free(content_txt);
+    free(raw);
+    free(txt);
 
-    EXEC SQL CLOSE mans;
-    EXEC SQL DEALLOCATE PREPARE select_content;
-    EXEC SQL DEALLOCATE PREPARE update_content_txt;
+    EXEC SQL CLOSE content;
+    EXEC SQL DEALLOCATE PREPARE select_raw;
+    EXEC SQL DEALLOCATE PREPARE update_txt;
 
     EXEC SQL COMMIT;
     EXEC SQL DISCONNECT ALL;
@@ -217,7 +217,6 @@ int main(int argc, char* argv[])
         exit(1);
     }
 
-    printf("Starting conversion...\n");
     convert();
     
     return 0;

@@ -85,6 +85,20 @@ class SoelimError(Exception):
     pass
 
 
+class Content(models.Model):
+    id = models.AutoField(primary_key=True)
+
+    # raw content of the man page
+    raw = models.TextField()
+
+    # cached HTML version of the manual
+    # (only the <body>, not the whole page served to users)
+    html = models.TextField(blank=True, null=True)
+
+    # plain-text version of the content - should be always present to make full-text search possible
+    txt = models.TextField(blank=True, null=True)
+
+
 class ManPage(models.Model):
     # would be created automatically anyway
     id = models.AutoField(primary_key=True)
@@ -105,15 +119,12 @@ class ManPage(models.Model):
     # language tag
     lang = models.TextField(default="en")
 
-    # content of the man page
-    content = models.TextField()
+    # the original content of this manual
+    content = models.ForeignKey(Content, related_name="manpage_content")
 
-    # cached HTML version of the manual
-    # (only the <body>, not the whole page served to users)
-    content_html = models.TextField(blank=True, null=True)
-
-    # plain-text version of the content - should be always present to make full-text search possible
-    content_txt = models.TextField(blank=True, null=True)
+    # shortcut for "hardlinks" due to the .so macro
+    # (this significantly reduces storage due to avoiding duplicate HTML and txt)
+    converted_content = models.ForeignKey(Content, null=True, related_name="manpage_converted_content")
 
     class Meta:
         unique_together = (
@@ -145,18 +156,44 @@ class ManPage(models.Model):
         if "." in self.lang:
             raise ValidationError("Language tag cannot contain dots.")
 
-    def get_preprocessed_content(self, *, lang, package_id):
-        # Strip comments, whitespace etc.
-        stripped = re.sub(r'^\.\\".*', "", self.content, flags=re.MULTILINE)
+    # this should always be used instead of `self.content.<format>` to load only
+    # the specified field (django does not support auto-defer fields)
+    def get_content(self, format, from_converted=None):
+        assert hasattr(Content, format)
+        if from_converted is None:
+            from_converted = format != "raw"
+        if from_converted is True:
+            content_id = self.converted_content_id
+        else:
+            content_id = self.content_id
+        return Content.objects.values_list(format, flat=True).get(id=content_id)
+
+    def set_content(self, format, text):
+        assert hasattr(Content, format)
+        assert format != "raw",  "the raw content should not be set with set_content"
+        Content.objects.filter(id=self.converted_content_id).update(**{format: text})
+
+    def resolve_so_link(self):
+        """
+        Detects if the manual is nothing but a "hardlink" to some different page
+        using the .so macro.
+
+        Effects:
+            - updates self.converted_content_id as necessary
+            - raises SoelimError if there is a .so macro which could not be resolved
+        """
+        if self.converted_content_id is None:
+            self.converted_content_id = self.content_id
+        else:
+            return
+
+        # strip comments, whitespace etc.
+        stripped = re.sub(r'^\.\\".*', "", self.get_content("raw"), flags=re.MULTILINE)
         stripped = stripped.strip()
 
-        # Eliminate the '.so' macro
-        # Replacing the content instead of doing a HTTP redirect is closer to the
-        # intention behind the .so macro, because the old name stays in the URL.
-        # TODO: with a better database structure we would not have to duplicate the resulting HTML/plaintext
-        # TODO: check that there are no double redirects
+        # eliminate the '.so' macro
         if re.fullmatch(r"^\.so [A-Za-z0-9@._+\-:\[\]\/]+\s*$", stripped):
-            path = self.content.split()[1]
+            path = stripped.split()[1]
             pp = PurePath(path)
             target_name = pp.stem
             target_section = pp.suffix[1:]  # strip the dot
@@ -164,21 +201,24 @@ class ManPage(models.Model):
             # There are actually packages redirecting their manuals to other packages,
             # e.g. shorewall6 -> shorewall. The attribution info provided on the page
             # isn't entirely correct, but that's what the authors intended...
-            query = ManPage.objects.filter(section=target_section, name=target_name, lang=lang).values("content", "package_id")[:2]
+            query = ManPage.objects.filter(section=target_section, name=target_name, lang=self.lang).values("content_id", "package_id")[:2]
             query = list(query)
 
             if len(query) == 0:
                 raise SoelimError
             elif len(query) == 1:
-                return query[0]["content"]
+                self.converted_content_id = query[0]["content_id"]
+            else:
+                # if the query is ambiguous, the only thing we can try is to check package_id
+                try:
+                    cid = ManPage.objects.values_list("content_id", flat=True) \
+                                         .get(section=target_section, name=target_name, lang=self.lang, package_id=self.package_id)
+                except ManPage.DoesNotExist:
+                    raise SoelimError
+                self.converted_content_id = cid
 
-            # if the query is ambiguous, the only thing we can try is to check package_id
-            try:
-                return ManPage.objects.values_list("content", flat=True).get(section=target_section, name=target_name, lang=lang, package_id=package_id)
-            except ManPage.DoesNotExist:
-                raise SoelimError
-
-        return self.content
+        # save changes to converted_content_id
+        self.save()
 
     @staticmethod
     def _convert(content, output_type, lang=None):
@@ -191,19 +231,20 @@ class ManPage(models.Model):
         assert p.stdout
         return p.stdout
 
-    def get_converted(self, output_type, lang, package_id):
+    def get_converted(self, output_type):
         assert output_type in {"html", "txt"}
-        column = "content_" + output_type
+
+        self.resolve_so_link()
 
         # convert the man page to HTML/txt if not already done
-        if getattr(self, column) is None:
-            content = self.get_preprocessed_content(lang=lang, package_id=package_id)
-            content = self._convert(content, output_type, lang)
-            content = postprocess(content, output_type, lang)
-            setattr(self, column, content)
-            self.save()
+        content = self.get_content(output_type)
+        if content is None:
+            content = self._convert(self.get_content("raw", from_converted=True), output_type, self.lang)
+            content = postprocess(content, output_type, self.lang)
+            self.set_content(output_type, content)
 
-        return getattr(self, column)
+        return content
+
 
 class SymbolicLink(models.Model):
     # would be created automatically anyway
