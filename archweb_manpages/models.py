@@ -214,11 +214,66 @@ class ManPage(models.Model):
                     cid = ManPage.objects.values_list("content_id", flat=True) \
                                          .get(section=target_section, name=target_name, lang=self.lang, package_id=self.package_id)
                 except ManPage.DoesNotExist:
-                    raise SoelimError
+                    raise SoelimError("unknown target page")
                 self.converted_content_id = cid
 
         # save changes to converted_content_id
         self.save()
+
+    def get_preprocessed_content(self, *, visited_ids=None, level=0):
+        """
+        Performs a recursive elimination of the .so macro and returns the final
+        content.
+
+        Effects:
+            - calls self.resolve_so_link()
+            - raises SoelimError if there is a .so macro pointing to an unknown
+              page, there is an inclusion cycle or the recursion depth limit
+              has been exceeded
+        """
+        if visited_ids is None:
+            visited_ids = {self.id}
+        else:
+            if self.id in visited_ids:
+                raise SoelimError("inclusion cycle detected")
+            elif level > 100:
+                raise SoelimError("recursion depth exceeded")
+
+        # let's save us some work for the future
+        self.resolve_so_link()
+
+        # always take from converted, even "hardlinks" may be included in other pages
+        content = self.get_content("raw", from_converted=True)
+
+        def repl(match):
+            target = match.group("target")
+            pp = PurePath(target)
+            target_name = pp.stem
+            target_section = pp.suffix[1:]  # strip the dot
+
+            # There are actually packages redirecting their manuals to other packages,
+            # e.g. shorewall6 -> shorewall. The attribution info provided on the page
+            # isn't entirely correct, but that's what the authors intended...
+            mans_count = ManPage.objects.filter(section=target_section, name=target_name, lang=self.lang).count()
+
+            if mans_count == 0:
+                raise SoelimError
+            elif mans_count == 1:
+                man = ManPage.objects.get(section=target_section, name=target_name, lang=self.lang)
+            else:
+                # if the query is ambiguous, the only thing we can try is to check package_id
+                try:
+                    man = ManPage.objects.get(section=target_section, name=target_name, lang=self.lang, package_id=self.package_id)
+                except ManPage.DoesNotExist:
+                    raise SoelimError("unknown target page")
+
+            return man.get_preprocessed_content(visited_ids=visited_ids | {self.id}, level=level + 1)
+
+        content = re.sub(r"^\.so (?P<target>[A-Za-z0-9@._+\-:\[\]\/]+)\s*$", repl, content, flags=re.MULTILINE)
+
+        # TODO: if level == 0, make sure that the HTML cache is invalidated whenever an included page changes
+
+        return content
 
     @staticmethod
     def _convert(content, output_type, lang=None):
@@ -239,7 +294,8 @@ class ManPage(models.Model):
         # convert the man page to HTML/txt if not already done
         content = self.get_content(output_type)
         if content is None:
-            content = self._convert(self.get_content("raw", from_converted=True), output_type, self.lang)
+            content = self.get_preprocessed_content()
+            content = self._convert(content, output_type, self.lang)
             content = postprocess(content, output_type, self.lang)
             self.set_content(output_type, content)
 
