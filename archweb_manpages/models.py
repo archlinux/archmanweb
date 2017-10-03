@@ -71,11 +71,10 @@ class Package(models.Model):
         unique_together = (
             ('name', 'repo'),
         )
-        if connection.vendor == "postgresql":
-            indexes = (
-                TrigramIndex(fields=["name"]),
-                SearchVectorIndex(fields=["description"], config="english"),
-            )
+        indexes = (
+            TrigramIndex(fields=["name"]),
+            SearchVectorIndex(fields=["description"], config="english"),
+        )
 
     def __str__(self):
         return "<Package: arch={}, repo={}, name={}, version={}>".format(self.arch, self.repo, self.name, self.version)
@@ -141,8 +140,7 @@ class ManPage(models.Model):
             # for optional 'section' and for filter in 'links to other sections'
             ('name', 'lang'),
         )
-        if connection.vendor == "postgresql":
-            indexes = [TrigramIndex(fields=["name"])]
+        indexes = [TrigramIndex(fields=["name"])]
 
     def clean(self):
         if not self.path:
@@ -336,8 +334,7 @@ class SymbolicLink(models.Model):
             # for checks in try_symlink_or_404
             ('from_name', 'lang'),
         )
-        if connection.vendor == "postgresql":
-            indexes = [TrigramIndex(fields=["from_name"])]
+        indexes = [TrigramIndex(fields=["from_name"])]
 
     def __str__(self):
         return "<SymbolicLink: package={}, lang={}, from_section={}, from_name={}, to_section={}, to_name>" \
