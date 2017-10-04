@@ -162,18 +162,6 @@ def update_man_pages(finder, updated_pkgs):
                         logger.debug("Skipping man page with duplicate encoding: {}".format(path))
                         continue
                     db_content = Content()
-                    db_man = ManPage()
-                    db_man.package_id = db_pkg.id
-                    db_man.path = path
-                    db_man.name = man_name
-                    db_man.section = man_section
-                    db_man.lang = man_lang
-                    db_man.content = db_content
-
-                    # validate and save
-                    db_man.full_clean()
-                    # TODO: this might still fail if there are multiple foo.1 in different directories and same language
-                    db_man.save()
                 else:
                     db_man = result[0]
                     db_content = db_man.content
@@ -182,6 +170,22 @@ def update_man_pages(finder, updated_pkgs):
                 db_content.html = None
                 db_content.txt = None
                 db_content.save()
+
+                if len(result) == 0:
+                    db_man = ManPage()
+                    db_man.package_id = db_pkg.id
+                    db_man.path = path
+                    db_man.name = man_name
+                    db_man.section = man_section
+                    db_man.lang = man_lang
+                    db_man.content = db_content
+
+                    # db_man has to be saved after db_content, because django's
+                    # validation is not deferrable (and db_content.id is not
+                    # known until the content is saved)
+                    db_man.full_clean()
+                    # TODO: this might still fail if there are multiple foo.1 in different directories and same language
+                    db_man.save()
 
                 updated_pages += 1
 
