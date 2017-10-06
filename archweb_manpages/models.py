@@ -268,9 +268,6 @@ class ManPage(models.Model):
             return man.get_preprocessed_content(visited_ids=visited_ids | {self.id}, level=level + 1)
 
         content = re.sub(r"^\.so (?P<target>[A-Za-z0-9@._+\-:\[\]\/]+)\s*$", repl, content, flags=re.MULTILINE)
-
-        # TODO: if level == 0, make sure that the HTML cache is invalidated whenever an included page changes
-
         return content
 
     @staticmethod
