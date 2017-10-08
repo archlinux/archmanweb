@@ -186,18 +186,34 @@ class ManPagesFinder:
 
         # extract man files
         t = tarfile.open(tarball, "r")
+        hardlinks = []
         for file in man_files:
             info = t.getmember(file)
-            if info.issym():
+            # Hardlinks on the filesystem level are indifferentiable from normal files,
+            # but in tar the first file added is "file" and the subsequent are hardlinks.
+            # To make sure that normal files are processed first, we postpone yielding of
+            # the hardlinks.
+            if info.islnk():
                 if file.endswith(".gz"):
                     file = file[:-3]
-                yield "symlink", file, info.linkname
+                target = info.linkname
+                if target.endswith(".gz"):
+                    target = target[:-3]
+                hardlinks.append( ("hardlink", file, target) )
+            elif info.issym():
+                if file.endswith(".gz"):
+                    file = file[:-3]
+                target = info.linkname
+                if target.endswith(".gz"):
+                    target = target[:-3]
+                yield "symlink", file, target
             else:
                 man = t.extractfile(file).read()
                 if file.endswith(".gz"):
                     file = file[:-3]
                     man = gzip.decompress(man)
                 yield "file", file, man
+        yield from hardlinks
         t.close()
 
     def get_all_man_contents(self):

@@ -75,16 +75,8 @@ def update_packages(finder, *, force=False, only_repos=None):
             continue
         logger.info("Updating packages from repository '{}'...".format(db.name))
         for pkg in db.pkgcache:
-            result = Package.objects.filter(repo=db.name, name=pkg.name)
-            assert len(result) in {0, 1}
-            if len(result) == 0:
-                db_package = Package()
-                db_package.repo = db.name
-                db_package.name = pkg.name
-                db_package.arch = pkg.arch
-                updated_pkgs.append(pkg)
-            else:
-                db_package = result[0]
+            try:
+                db_package = Package.objects.get(repo=db.name, name=pkg.name)
                 if pyalpm.vercmp(db_package.version, pkg.version) == -1:
                     updated_pkgs.append(pkg)
                 elif force is True:
@@ -92,6 +84,12 @@ def update_packages(finder, *, force=False, only_repos=None):
                 else:
                     # skip void update of db_package
                     continue
+            except Package.DoesNotExist:
+                db_package = Package()
+                db_package.repo = db.name
+                db_package.name = pkg.name
+                db_package.arch = pkg.arch
+                updated_pkgs.append(pkg)
 
             # update volatile fields (this is run iff the pkg was added to updated_pkgs)
             db_package.version = pkg.version
@@ -154,24 +152,27 @@ def update_man_pages(finder, updated_pkgs):
                     continue
 
                 paths.add(path)
-                result = ManPage.objects.filter(package_id=db_pkg.id, path=path)
-                assert len(result) in {0, 1}
-                if len(result) == 0:
+
+                # find or create Content instance
+                try:
+                    db_man = ManPage.objects.get(package_id=db_pkg.id, path=path)
+                    db_content = db_man.content
+                except ManPage.DoesNotExist:
                     # skip man pages with duplicate encoding
-                    if ManPage.objects.filter(package_id=db_pkg.id, name=man_name, section=man_section, lang=man_lang).count() > 0:
+                    if ManPage.objects.filter(package_id=db_pkg.id, name=man_name, section=man_section, lang=man_lang).exists():
                         logger.debug("Skipping man page with duplicate encoding: {}".format(path))
                         continue
+                    db_man = None
                     db_content = Content()
-                else:
-                    db_man = result[0]
-                    db_content = db_man.content
 
+                # update content
                 db_content.raw = content
                 db_content.html = None
                 db_content.txt = None
                 db_content.save()
 
-                if len(result) == 0:
+                # update newly-created ManPage instance
+                if db_man is None:
                     db_man = ManPage()
                     db_man.package_id = db_pkg.id
                     db_man.path = path
@@ -189,6 +190,56 @@ def update_man_pages(finder, updated_pkgs):
 
                 updated_pages += 1
 
+            elif t == "hardlink":
+                # hardlinks can't point to non-existent files, so they can be stored in the ManPage table
+                source, target = v1, v2
+
+                # extract info from source, check if it makes sense
+                try:
+                    source_name, source_section, source_lang = parse_man_path(source)
+                except UnknownManPath:
+                    logger.warning("Skipping hardlink with unrecognized source path: {}".format(source))
+                    continue
+
+                # extract info from target, check if it makes sense
+                try:
+                    target_name, target_section, target_lang = parse_man_path(target)
+                except UnknownManPath:
+                    logger.warning("Skipping hardlink with unrecognized target path: {}".format(target))
+                    continue
+
+                # drop encoding from the lang (ru.KOI8-R)
+                if "." in source_lang:
+                    source_lang, _ = source_lang.split(".", maxsplit=1)
+                if "." in target_lang:
+                    target_lang, _ = target_lang.split(".", maxsplit=1)
+
+                # drop useless redirects
+                if target_lang == source_lang and target_section == source_section and target_name == source_name:
+                    logger.warning("Skipping hardlink from {} to {} (the base name is the same).".format(source, target))
+                    continue
+
+                # save into database
+                man_target = ManPage.objects.get(package_id=db_pkg.id, name=target_name, section=target_section, lang=target_lang)
+                try:
+                    man_source = ManPage.objects.get(package_id=db_pkg.id, name=source_name, section=source_section, lang=source_lang)
+                except ManPage.DoesNotExist:
+                    man_source = ManPage(
+                        package_id=db_pkg.id,
+                        path=source,
+                        name=source_name,
+                        section=source_section,
+                        lang=source_lang
+                    )
+                man_source.content_id = man_target.content_id
+
+                # validate and save
+                man_source.full_clean()
+                man_source.save()
+
+                paths.add(source)
+                updated_pages += 1
+
             elif t == "symlink":
                 source, target = v1, v2
 
@@ -198,10 +249,6 @@ def update_man_pages(finder, updated_pkgs):
                 except UnknownManPath:
                     logger.warning("Skipping symlink with unrecognized structure: {}".format(source))
                     continue
-
-                # drop .gz suffix from target
-                if target.endswith(".gz"):
-                    target = target[:-3]
 
                 if target.startswith("/"):
                     # make target relative to "/"
@@ -219,6 +266,12 @@ def update_man_pages(finder, updated_pkgs):
                     logger.warning("Skipping symlink with unknown target: {}".format(target))
                     continue
 
+                # drop encoding from the lang (ru.KOI8-R)
+                if "." in source_lang:
+                    source_lang, _ = source_lang.split(".", maxsplit=1)
+                if "." in target_lang:
+                    target_lang, _ = target_lang.split(".", maxsplit=1)
+
                 # drop cross-language symlinks
                 if target_lang != source_lang:
                     logger.warning("Skipping cross-language symlink from {} to {}".format(source, target))
@@ -229,21 +282,16 @@ def update_man_pages(finder, updated_pkgs):
                     logger.warning("Skipping symlink from {} to {} (the base name is the same).".format(source, target))
                     continue
 
-                # drop encoding from the lang (ru.KOI8-R)
-                if "." in source_lang:
-                    source_lang, _ = source_lang.split(".", maxsplit=1)
-
                 # save into database
-                query = SymbolicLink.objects.filter(package_id=db_pkg.id, lang=source_lang, from_section=source_section, from_name=source_name)
-                assert len(query) in {0, 1}
-                if len(query) == 0:
-                    db_link = SymbolicLink()
-                    db_link.package_id = db_pkg.id
-                    db_link.lang = source_lang
-                    db_link.from_section = source_section
-                    db_link.from_name = source_name
-                else:
-                    db_link = query[0]
+                try:
+                    db_link = SymbolicLink.objects.get(package_id=db_pkg.id, lang=source_lang, from_section=source_section, from_name=source_name)
+                except SymbolicLink.DoesNotExist:
+                    db_link = SymbolicLink(
+                        package_id=db_pkg.id,
+                        lang=source_lang,
+                        from_section=source_section,
+                        from_name=source_name,
+                    )
                 db_link.to_section = target_section
                 db_link.to_name = target_name
 
