@@ -120,9 +120,9 @@ def update_man_pages(finder, updated_pkgs):
         if not files:
             continue
 
-        # the files above include the .gz suffix, we need to collect even the
-        # versions that enter the database
-        paths = set()
+        # set of unique keys (tuples) of pages present in the package,
+        # the rest will be deleted from the database
+        keys = set()
 
         # insert/update man pages
         for t, v1, v2 in finder.get_man_contents(pkg):
@@ -150,17 +150,16 @@ def update_man_pages(finder, updated_pkgs):
                     logger.warning("Skipping empty man page: {}".format(path))
                     continue
 
-                paths.add(path)
+                if (man_name, man_section, man_lang) in keys:
+                    logger.debug("Skipping duplicate man page (maybe duplicate encoding): {}".format(path))
+                    continue
+                keys.add( (man_name, man_section, man_lang) )
 
                 # find or create Content instance
                 try:
-                    db_man = ManPage.objects.get(package_id=db_pkg.id, path=path)
+                    db_man = ManPage.objects.get(package_id=db_pkg.id, name=man_name, section=man_section, lang=man_lang)
                     db_content = db_man.content
                 except ManPage.DoesNotExist:
-                    # skip man pages with duplicate encoding
-                    if ManPage.objects.filter(package_id=db_pkg.id, name=man_name, section=man_section, lang=man_lang).exists():
-                        logger.debug("Skipping man page with duplicate encoding: {}".format(path))
-                        continue
                     db_man = None
                     db_content = Content()
 
@@ -174,7 +173,6 @@ def update_man_pages(finder, updated_pkgs):
                 if db_man is None:
                     db_man = ManPage()
                     db_man.package_id = db_pkg.id
-                    db_man.path = path
                     db_man.name = man_name
                     db_man.section = man_section
                     db_man.lang = man_lang
@@ -225,7 +223,6 @@ def update_man_pages(finder, updated_pkgs):
                 except ManPage.DoesNotExist:
                     man_source = ManPage(
                         package_id=db_pkg.id,
-                        path=source,
                         name=source_name,
                         section=source_section,
                         lang=source_lang
@@ -236,7 +233,7 @@ def update_man_pages(finder, updated_pkgs):
                 man_source.full_clean()
                 man_source.save()
 
-                paths.add(source)
+                keys.add( (source_name, source_section, source_lang) )
                 updated_pages += 1
 
             elif t == "symlink":
@@ -303,8 +300,8 @@ def update_man_pages(finder, updated_pkgs):
 
         # delete man pages whose files no longer exist
         for db_man in ManPage.objects.filter(package_id=db_pkg.id):
-            if db_man.path not in paths:
-                ManPage.objects.filter(package_id=db_pkg.id, path=db_man.path).delete()
+            if (db_man.name, db_man.section, db_man.lang) not in keys:
+                ManPage.objects.filter(package_id=db_pkg.id, name=db_man.name, section=db_man.section, lang=db_man.lang).delete()
 
     # delete unreferenced rows from Content
     unreferenced = Content.objects.filter(manpage_content__isnull=True).delete()
