@@ -52,6 +52,9 @@ def parse_man_path(path):
     man_name = pp.stem
     man_section = pp.suffix[1:]  # strip the dot
 
+    if not man_section:
+        raise UnknownManPath("empty section number")
+
     # relative_to can succeed only if path is a subdir of MANDIR
     if not path.startswith(MANDIR):
         raise UnknownManPath
@@ -130,10 +133,6 @@ def update_man_pages(finder, updated_pkgs):
                     man_name, man_section, man_lang = parse_man_path(path)
                 except UnknownManPath:
                     logger.warning("Skipping path with unrecognized structure: {}".format(path))
-                    continue
-
-                if not man_section:
-                    logger.warning("Skipping path with empty section number: {}".format(path))
                     continue
 
                 # extract the encoding hint (see e.g. evim.1.ru.KOI8-R)
