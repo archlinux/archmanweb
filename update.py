@@ -216,6 +216,11 @@ def update_man_pages(finder, updated_pkgs):
                     logger.warning("Skipping hardlink from {} to {} (the base name is the same).".format(source, target))
                     continue
 
+                if (source_name, source_section, source_lang) in keys:
+                    logger.debug("Skipping duplicate hardlink: {}".format(source))
+                    continue
+                keys.add( (source_name, source_section, source_lang) )
+
                 # save into database
                 man_target = ManPage.objects.get(package_id=db_pkg.id, name=target_name, section=target_section, lang=target_lang)
                 try:
@@ -233,7 +238,6 @@ def update_man_pages(finder, updated_pkgs):
                 man_source.full_clean()
                 man_source.save()
 
-                keys.add( (source_name, source_section, source_lang) )
                 updated_pages += 1
 
             elif t == "symlink":
