@@ -47,7 +47,7 @@ def listing(request, *, repo=None, pkgname=None):
         raise HttpResponse("Unknown sorting parameter: {}".format(sorting), status=400)
 
     db_pkg = None
-    man_pages = ManPage.objects.order_by( *sorting_columns ).defer("path")
+    man_pages = ManPage.objects.order_by( *sorting_columns )
 
     if pkgname:
         # check that such package exists
@@ -229,13 +229,11 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
 
     # find the man page and package containing it
     if man_section is None:
-        query = ManPage.objects.filter(name=man_name, lang=lang, **_get_package_filter(repo, pkgname)) \
-                               .defer("path")
+        query = ManPage.objects.filter(name=man_name, lang=lang, **_get_package_filter(repo, pkgname))
         # TODO: we're trying to guess the newest version, but lexical ordering is too weak
         query = query.order_by("section", "-package__version")[:1]
     else:
-        query = ManPage.objects.filter(section=man_section, name=man_name, lang=lang, **_get_package_filter(repo, pkgname)) \
-                               .defer("path")
+        query = ManPage.objects.filter(section=man_section, name=man_name, lang=lang, **_get_package_filter(repo, pkgname))
         # TODO: we're trying to guess the newest version, but lexical ordering is too weak
         query = query.order_by("-package__version")[:1]
 

@@ -106,9 +106,6 @@ class ManPage(models.Model):
     # NOTE: django emulates ON DELETE, it is not added to the SQL
     package = models.ForeignKey(Package, on_delete=models.CASCADE)
 
-    # path of the file relative to /
-    path = models.TextField()
-
     # man page name
     name = models.TextField()
 
@@ -127,7 +124,6 @@ class ManPage(models.Model):
 
     class Meta:
         unique_together = (
-            ('package', 'path'),
             ('package', 'section', 'name', 'lang'),
         )
         index_together = (
@@ -143,8 +139,6 @@ class ManPage(models.Model):
         indexes = [TrigramIndex(fields=["name"])]
 
     def clean(self):
-        if not self.path:
-            raise ValidationError("Path cannot be empty.")
         if not self.name:
             raise ValidationError("Man name cannot be empty.")
         if not self.section:
