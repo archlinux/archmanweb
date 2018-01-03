@@ -11,7 +11,7 @@ def index(request):
     count_symlinks = SymbolicLink.objects.count()
     count_all_pkgs = Package.objects.count()
     count_pkgs_with_mans = ManPage.objects.aggregate(Count("package_id", distinct=True))["package_id__count"]
-    last_updates = UpdateLog.objects.order_by("-id")[:10]
+    last_updates = UpdateLog.objects.order_by("-id")[:5]
     context = {
         "count_man_pages": count_man_pages,
         "count_symlinks": count_symlinks,
