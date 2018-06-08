@@ -116,11 +116,11 @@ class ManPage(models.Model):
     lang = models.TextField(default="en")
 
     # the original content of this manual
-    content = models.ForeignKey(Content, related_name="manpage_content")
+    content = models.ForeignKey(Content, on_delete=models.DO_NOTHING, related_name="manpage_content")
 
     # shortcut for "hardlinks" due to the .so macro
     # (this significantly reduces storage due to avoiding duplicate HTML and txt)
-    converted_content = models.ForeignKey(Content, blank=True, null=True, related_name="manpage_converted_content")
+    converted_content = models.ForeignKey(Content, on_delete=models.DO_NOTHING, blank=True, null=True, related_name="manpage_converted_content")
 
     class Meta:
         unique_together = (
