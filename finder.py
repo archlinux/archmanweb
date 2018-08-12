@@ -165,6 +165,15 @@ class ManPagesFinder:
             nodeps = True
         o = Options
         t = pycman.transaction.init_from_options(self.sync_db, o)
+
+        # reset callback functions which print lots of text into the logs
+        def _void_cb(*args):
+            pass
+        self.sync_db.dlcb = _void_cb
+        self.sync_db.eventcb = _void_cb
+        self.sync_db.questioncb = _void_cb
+        self.sync_db.progresscb = _void_cb
+
         t.add_pkg(pkg)
         if not pycman.transaction.finalize(t):
             raise Exception("Pycman transaction failed: {}".format(t))
