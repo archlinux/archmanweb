@@ -88,7 +88,7 @@ def postprocess(text, content_type, lang):
 
 _norm_pattern = re.compile(r"\s+")
 _headings_pattern = re.compile(r"\<h1[^\>]*\>[^\<\>]*"
-                               r"\<a class=(\"|\')selflink(\"|\') href=(\"|\')#(?P<id>[A-Za-z0-9\-_\.]+)(\"|\')\>"
+                               r"\<a class=(\"|\')selflink(\"|\') href=(\"|\')#(?P<id>[A-Za-z0-9\-_.?!()]+)(\"|\')\>"
                                r"(?P<title>.+?)"
                                r"\<\/a\>[^\<\>]*"
                                r"\<\/h1\>", re.DOTALL)
