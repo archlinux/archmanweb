@@ -86,9 +86,18 @@ def postprocess(text, content_type, lang):
         return _backspace_pattern.sub("", text)
 
 
+_html_entity_pattern = re.compile(r"&#(x?)([0-9a-fA-F]+);")
+def normalize_html_entities(s):
+    def repl(match):
+        # TODO: add some error checking
+        if match.group(1):
+            return chr(int(match.group(2), 16))
+        return chr(int(match.group(2)))
+    return _html_entity_pattern.sub(repl, s)
+
 _norm_pattern = re.compile(r"\s+")
 _headings_pattern = re.compile(r"\<h1[^\>]*\>[^\<\>]*"
-                               r"\<a class=(\"|\')selflink(\"|\') href=(\"|\')#(?P<id>[A-Za-z0-9\-_.?!()]+)(\"|\')\>"
+                               r"\<a class=(\"|\')selflink(\"|\') href=(\"|\')#(?P<id>\S+)(\"|\')\>"
                                r"(?P<title>.+?)"
                                r"\<\/a\>[^\<\>]*"
                                r"\<\/h1\>", re.DOTALL)
@@ -97,5 +106,7 @@ def extract_headings(html):
         return _norm_pattern.sub(" ", title)
     result = []
     for match in _headings_pattern.finditer(html):
-        result.append(dict(id=match.group("id"), title=normalize(match.group("title"))))
+        id = normalize_html_entities(match.group("id"))
+        title = normalize_html_entities(normalize(match.group("title")))
+        result.append(dict(id=id, title=title))
     return result
