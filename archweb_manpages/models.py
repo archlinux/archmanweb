@@ -120,7 +120,7 @@ class ManPage(models.Model):
 
     # shortcut for "hardlinks" due to the .so macro
     # (this significantly reduces storage due to avoiding duplicate HTML and txt)
-    converted_content = models.ForeignKey(Content, on_delete=models.DO_NOTHING, blank=True, null=True, related_name="manpage_converted_content")
+    converted_content = models.ForeignKey(Content, on_delete=models.SET_NULL, blank=True, null=True, related_name="manpage_converted_content")
 
     class Meta:
         unique_together = (
