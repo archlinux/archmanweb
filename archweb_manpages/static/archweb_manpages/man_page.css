@@ -50,12 +50,12 @@
 }
 
 /* fancy anchor links */
-.man-page-content a.selflink {
+.man-page-content a.permalink {
     color: inherit;
     text-decoration: inherit;
     border-bottom: thin dotted;
 }
-.man-page-content a.selflink:only-child:hover:after {
+.man-page-content a.permalink:only-child:hover:after {
     /* :only-child is necessary, otherwise the following text would be shifted */
     /* (alternatively we could match only links inside <h1> etc. */
     content: " ¶";

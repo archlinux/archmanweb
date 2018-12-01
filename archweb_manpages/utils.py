@@ -97,7 +97,7 @@ def normalize_html_entities(s):
 
 _norm_pattern = re.compile(r"\s+")
 _headings_pattern = re.compile(r"\<h1[^\>]*\>[^\<\>]*"
-                               r"\<a class=(\"|\')selflink(\"|\') href=(\"|\')#(?P<id>\S+)(\"|\')\>"
+                               r"\<a class=(\"|\')permalink(\"|\') href=(\"|\')#(?P<id>\S+)(\"|\')\>"
                                r"(?P<title>.+?)"
                                r"\<\/a\>[^\<\>]*"
                                r"\<\/h1\>", re.DOTALL)
