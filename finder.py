@@ -1,15 +1,16 @@
 #! /usr/bin/env python3
 
-import os.path
+import os
+from pathlib import Path
 import shutil
 import datetime
 import logging
-import tarfile
 import gzip
 
 import requests
 import pycman
 import pyalpm
+import xtarfile as tarfile  # wrapper around tarfile - needed for zst packages
 
 logger = logging.getLogger(__name__)
 
@@ -42,9 +43,10 @@ MANDIR = "usr/share/man/"
 
 class ManPagesFinder:
     def __init__(self, tmpdir):
-        self.tmpdir = os.path.abspath(os.path.join(tmpdir, "arch-manpages"))
-        self.dbpath = os.path.join(self.tmpdir, "pacdbpath")
-        self.cachedir = os.path.join(self.tmpdir, "cached_packages")
+        self.tmpdir = Path(tmpdir) / "arch-manpages"
+        self.tmpdir = self.tmpdir.resolve()
+        self.dbpath = self.tmpdir / "pacdbpath"
+        self.cachedir = self.tmpdir / "cached_packages"
 
         os.makedirs(self.dbpath, exist_ok=True)
         os.makedirs(self.cachedir, exist_ok=True)
@@ -55,7 +57,7 @@ class ManPagesFinder:
         self._cached_tarfiles = {}
 
     def init_sync_db(self, config, arch):
-        confpath = os.path.join(self.dbpath, "pacman.conf")
+        confpath = self.dbpath / "pacman.conf"
         f = open(confpath, "w")
         f.write(config.format(pacdbpath=self.dbpath,
                               cachedir=self.cachedir,
@@ -64,11 +66,11 @@ class ManPagesFinder:
         return pycman.config.init_with_config(confpath)
 
     def init_files_db(self, pacdb):
-        dbpath = os.path.join(self.dbpath, "files")
+        dbpath = self.dbpath / "files"
         os.makedirs(dbpath, exist_ok=True)
         for db in pacdb.get_syncdbs():
-            files_db = os.path.join(dbpath, "{}.files".format(db.name))
-            if os.path.exists(files_db):
+            files_db = dbpath / "{}.files".format(db.name)
+            if files_db.exists():
                 local_timestamp = os.path.getmtime(files_db)
             else:
                 local_timestamp = 0
@@ -81,7 +83,7 @@ class ManPagesFinder:
     def _refresh_files_db(self, db):
         for server in db.servers:
             for ext in [".tar.gz", ".tar.xz"]:
-                url = os.path.join(server, db.name + ".files" + ext)
+                url = server + "/" + db.name + ".files" + ext
                 r = requests.head(url)
                 if r.status_code != 200:
                     continue
@@ -94,7 +96,7 @@ class ManPagesFinder:
                 # get local things
                 local_db = self.files_db[db.name]
                 local_timestamp = local_db["timestamp"]
-                _path = os.path.join(os.path.dirname(local_db["path"]), db.name + ".files" + ext)
+                _path = Path(local_db["path"]).parent / (db.name + ".files" + ext)
 
                 # check if we need to update
                 if remote_timestamp > local_timestamp:
@@ -111,7 +113,7 @@ class ManPagesFinder:
                         del self._cached_tarfiles[local_db["path"]]
 
                     # create or update the symlink
-                    if os.path.islink(local_db["path"]):
+                    if Path(local_db["path"]).is_symlink():
                         os.remove(local_db["path"])
                     os.symlink(db.name + ".files" + ext, local_db["path"])
 
@@ -146,7 +148,7 @@ class ManPagesFinder:
         if repo is None:
             repo = [db for db in self.sync_db.get_syncdbs() if db.get_pkg(pkg.name)][0].name
         local_db = self.files_db[repo]["path"]
-        t = self._cached_tarfiles.setdefault(local_db, tarfile.open(local_db, "r"))
+        t = self._cached_tarfiles.setdefault(local_db, tarfile.open(str(local_db.resolve()), "r"))
         files = t.extractfile("{}-{}/files".format(pkg.name, pkg.version))
 
         for line in files.readlines():
@@ -188,42 +190,43 @@ class ManPagesFinder:
             return
 
         # get the pkg tarball
-        tarball = os.path.join(self.cachedir, "{}-{}-{}.pkg.tar.xz".format(pkg.name, pkg.version, pkg.arch))
-        if not os.path.isfile(tarball):
+        _pattern = "{}-{}-{}.pkg.tar.*".format(pkg.name, pkg.version, pkg.arch)
+        if not list(self.cachedir.glob(_pattern)):
             self._download_package(pkg)
-        assert os.path.isfile(tarball)
+        tarballs = sorted(self.cachedir.glob(_pattern))
+        assert len(tarballs) > 0, _pattern
+        tarball = tarballs[0]
 
         # extract man files
-        t = tarfile.open(tarball, "r")
-        hardlinks = []
-        for file in man_files:
-            info = t.getmember(file)
-            # Hardlinks on the filesystem level are indifferentiable from normal files,
-            # but in tar the first file added is "file" and the subsequent are hardlinks.
-            # To make sure that normal files are processed first, we postpone yielding of
-            # the hardlinks.
-            if info.islnk():
-                if file.endswith(".gz"):
-                    file = file[:-3]
-                target = info.linkname
-                if target.endswith(".gz"):
-                    target = target[:-3]
-                hardlinks.append( ("hardlink", file, target) )
-            elif info.issym():
-                if file.endswith(".gz"):
-                    file = file[:-3]
-                target = info.linkname
-                if target.endswith(".gz"):
-                    target = target[:-3]
-                yield "symlink", file, target
-            else:
-                man = t.extractfile(file).read()
-                if file.endswith(".gz"):
-                    file = file[:-3]
-                    man = gzip.decompress(man)
-                yield "file", file, man
-        yield from hardlinks
-        t.close()
+        with tarfile.open(str(tarball), "r") as t:
+            hardlinks = []
+            for file in man_files:
+                info = t.getmember(file)
+                # Hardlinks on the filesystem level are indifferentiable from normal files,
+                # but in tar the first file added is "file" and the subsequent are hardlinks.
+                # To make sure that normal files are processed first, we postpone yielding of
+                # the hardlinks.
+                if info.islnk():
+                    if file.endswith(".gz"):
+                        file = file[:-3]
+                    target = info.linkname
+                    if target.endswith(".gz"):
+                        target = target[:-3]
+                    hardlinks.append( ("hardlink", file, target) )
+                elif info.issym():
+                    if file.endswith(".gz"):
+                        file = file[:-3]
+                    target = info.linkname
+                    if target.endswith(".gz"):
+                        target = target[:-3]
+                    yield "symlink", file, target
+                else:
+                    man = t.extractfile(file).read()
+                    if file.endswith(".gz"):
+                        file = file[:-3]
+                        man = gzip.decompress(man)
+                    yield "file", file, man
+            yield from hardlinks
 
     def get_all_man_contents(self):
         for db in self.sync_db.get_syncdbs():
