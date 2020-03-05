@@ -321,11 +321,16 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
 def search(request):
     term = request.GET["q"]
 
+    man_filter = {}
+
+    if "lang" in request.GET:
+        man_filter["lang__iexact"] = request.GET["lang"]
+
     man_results = ManPage.objects.values("name", "section", "lang", "package__repo", "package__name") \
-                                 .filter(name__trigram_similar=term) \
+                                 .filter(name__trigram_similar=term, **man_filter) \
                                  .annotate(similarity=TrigramSimilarity("name", term)) \
            .union(SymbolicLink.objects.values("from_name", "from_section", "lang", "package__repo", "package__name")
-                                      .filter(from_name__trigram_similar=term)
+                                      .filter(from_name__trigram_similar=term, **man_filter)
                                       .annotate(similarity=TrigramSimilarity("from_name", term)),
                   all=True) \
            .order_by("-similarity", "name", "section", "lang")
