@@ -12,20 +12,26 @@
    in the [Django database settings](https://docs.djangoproject.com/en/1.11/ref/settings/#databases)
    in the `mysite/local_settings.py` file.
 
-3. Make migrations.
+3. Make sure that the [pg_trgm](https://www.postgresql.org/docs/current/pgtrgm.html)
+   extension is [created](https://www.postgresql.org/docs/current/sql-createextension.html)
+   in the database. For example:
+
+        psql --username=<username> --dbname=<dbname> --command "create extension if not exists pg_trgm;"
+
+4. Make migrations.
 
         ./manage.py makemigrations
 
-3. Migrate changes.
+5. Migrate changes.
 
         ./manage.py migrate
 
-4. Start the development web server with `./manage.py runserver`. The site
+6. Start the development web server with `./manage.py runserver`. The site
    should be available at http://localhost:8000, saying that there are 0 man
    pages and 0 packages (because they were not imported yet). The server will
    automatically reload when you make changes to the webapp code or templates.
 
-5. Run the `update.py` script to import some man pages. However, note that the
+7. Run the `update.py` script to import some man pages. However, note that the
    full import requires to download about 7.5 GB of packages from a mirror of
    the Arch repos and then the extraction takes about 20-30 minutes. (The volume
    of all man pages is less than 300 MB though.) If you won't need all man pages
