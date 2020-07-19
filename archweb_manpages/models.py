@@ -15,26 +15,18 @@ from .utils import reverse_man_url, postprocess
 #     from django.contrib.postgres.search import SearchVector
 #     GinIndex(fields=[SearchVector("description", config="english")])
 # see https://code.djangoproject.com/ticket/26167
+# this is a hack inspired by this blog post:
+# https://vxlabs.com/2018/01/31/creating-a-django-migration-for-a-gist-gin-index-with-a-special-index-operator/
 class SearchVectorIndex(GinIndex):
     def __init__(self, config="english", *args, **kwargs):
         self.config = config
         super().__init__(*args, **kwargs)
 
-    def get_sql_create_template_values(self, model, schema_editor, using):
-        fields = [model._meta.get_field(field_name) for field_name, order in self.fields_orders]
-        tablespace_sql = schema_editor._get_index_tablespace_sql(model, fields)
-        quote_name = schema_editor.quote_name
-        columns = [
-            ("to_tsvector('%s', %s) %s" % (self.config, quote_name(field.column), order)).strip()
-            for field, (field_name, order) in zip(fields, self.fields_orders)
-        ]
-        return {
-            'table': quote_name(model._meta.db_table),
-            'name': quote_name(self.name),
-            'columns': ', '.join(columns),
-            'using': using,
-            'extra': tablespace_sql,
-        }
+    def create_sql(self, model, schema_editor, **kwargs):
+        statement = super().create_sql(model, schema_editor, **kwargs)
+        # this works only for one column, otherwise we get a list inside to_tsvector
+        statement.template = "CREATE INDEX %(name)s ON %(table)s%(using)s (to_tsvector('" + self.config + "'::regconfig, %(columns)s))%(extra)s"
+        return statement
 
 class Package(models.Model):
     id = models.AutoField(primary_key=True)
@@ -55,7 +47,7 @@ class Package(models.Model):
         )
         indexes = (
             GinIndex(name="package_name", fields=["name"], opclasses=["gin_trgm_ops"]),
-            SearchVectorIndex(fields=["description"], config="english"),
+            SearchVectorIndex(name="package_description_search", fields=["description"], config="english"),
         )
 
     def __str__(self):
