@@ -2,7 +2,7 @@
 
 ## Dependencies
 
-	pacman -S pyalpm python-chardet python-django python-psycopg2 python-requests
+	pacman -S pyalpm python-chardet python-django python-psycopg2 python-requests python-xtarfile
 
 ## Installation
 
