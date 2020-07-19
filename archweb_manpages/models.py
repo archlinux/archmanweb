@@ -10,24 +10,6 @@ from django.core.exceptions import ValidationError
 
 from .utils import reverse_man_url, postprocess
 
-# ref: https://stackoverflow.com/a/44962928/4180822
-class TrigramIndex(GinIndex):
-    def get_sql_create_template_values(self, model, schema_editor, using):
-        fields = [model._meta.get_field(field_name) for field_name, order in self.fields_orders]
-        tablespace_sql = schema_editor._get_index_tablespace_sql(model, fields)
-        quote_name = schema_editor.quote_name
-        columns = [
-            ('%s %s' % (quote_name(field.column), order)).strip() + ' gin_trgm_ops'
-            for field, (field_name, order) in zip(fields, self.fields_orders)
-        ]
-        return {
-            'table': quote_name(model._meta.db_table),
-            'name': quote_name(self.name),
-            'columns': ', '.join(columns),
-            'using': using,
-            'extra': tablespace_sql,
-        }
-
 # django does not support functional indexes (indexes on expressions) out of the box,
 # otherwise we could use just this:
 #     from django.contrib.postgres.search import SearchVector
@@ -72,7 +54,7 @@ class Package(models.Model):
             ('name', 'repo'),
         )
         indexes = (
-            TrigramIndex(fields=["name"]),
+            GinIndex(name="package_name", fields=["name"], opclasses=["gin_trgm_ops"]),
             SearchVectorIndex(fields=["description"], config="english"),
         )
 
@@ -136,7 +118,7 @@ class ManPage(models.Model):
             # for optional 'section' and for filter in 'links to other sections'
             ('name', 'lang'),
         )
-        indexes = [TrigramIndex(fields=["name"])]
+        indexes = [GinIndex(name="manpage_name", fields=["name"], opclasses=["gin_trgm_ops"])]
 
     def clean(self):
         if not self.name:
@@ -325,7 +307,7 @@ class SymbolicLink(models.Model):
             # for checks in try_symlink_or_404
             ('from_name', 'lang'),
         )
-        indexes = [TrigramIndex(fields=["from_name"])]
+        indexes = [GinIndex(name="symboliclink_from_name", fields=["from_name"], opclasses=["gin_trgm_ops"])]
 
     def __str__(self):
         return "<SymbolicLink: package={}, lang={}, from_section={}, from_name={}, to_section={}, to_name>" \
