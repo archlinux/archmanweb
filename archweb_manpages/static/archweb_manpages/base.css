@@ -1,32 +1,40 @@
+body {
+  margin: 0;
+}
+
 header {
-    margin-bottom: 1ex;
+    padding: 10px 15px;
+    background: #333;
+    border-bottom: 5px #08c solid;
+    color: white;
+    display: flex;
+    justify-content: space-between;
 }
 header > h1 {
-    display: inline;
-    margin-right: 3em;
     font-size: 1.25em;
-}
-header > nav {
-    display: inline;
-    margin-right: 3em;
+    margin: 0;
 }
 header > nav > a {
     font-weight: bold;
     font-size: 1.25em;
     text-decoration: none;
+    color: #999;
+}
+header > nav > a:focus,
+header > nav > a:hover {
+    text-decoration: underline;
+    color: white;
 }
 header > nav > a.selected {
-    color: inherit;
+    color: white;
 }
 header > nav > a:not(:last-child) {
     margin-right: 0.5em;
 }
-header > form.search {
-    display: inline;
-}
 
 main#content {
     display: flex;
+    margin: 1em;
 }
 
 #content-left {
