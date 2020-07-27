@@ -9,14 +9,19 @@ header {
     color: white;
     display: flex;
     justify-content: space-between;
+    font-family: sans-serif;
 }
 header > h1 {
     font-size: 1.25em;
     margin: 0;
 }
+header > nav {
+    /* equal to the difference between font sizes of header>h1 and header>nav>a */
+    margin-top: 0.25em;
+}
 header > nav > a {
     font-weight: bold;
-    font-size: 1.25em;
+    font-size: 1em;
     text-decoration: none;
     color: #999;
 }
@@ -29,7 +34,7 @@ header > nav > a.selected {
     color: white;
 }
 header > nav > a:not(:last-child) {
-    margin-right: 0.5em;
+    margin-right: 1em;
 }
 
 main#content {
