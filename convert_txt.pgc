@@ -117,10 +117,9 @@ void convert()
 
     // if there are multiple connections: EXEC SQL SET CONNECTION connection-name;
     // or EXEC SQL AT connection-name SELECT ...;
-    
-    // NOTE: .so elimination is not necessary for full-text search, it would
-    // only introduce duplicate results. Therefore we skip all manuals
-    // containing the .so macro right in the SQL query.
+
+    // NOTE: This program is not capable to deal with the .so file inclusion, so
+    // we skip all manuals containing the .so macro right in the SQL query.
     EXEC SQL DECLARE content CURSOR FOR
         SELECT id, octet_length(raw) FROM archweb_manpages_content
         WHERE txt IS NULL AND raw !~ '(?n)^\.so .*$'
@@ -129,7 +128,7 @@ void convert()
 
     EXEC SQL PREPARE select_raw FROM "SELECT raw FROM archweb_manpages_content WHERE id = ?";
     EXEC SQL PREPARE update_txt FROM "UPDATE archweb_manpages_content SET txt = regexp_replace(?, '.\b', '', 'g') WHERE id = ?";
-    
+
     EXEC SQL BEGIN DECLARE SECTION;
         int id;
         int raw_length;
@@ -218,6 +217,6 @@ int main(int argc, char* argv[])
     }
 
     convert();
-    
+
     return 0;
 }
