@@ -366,8 +366,8 @@ if __name__ == "__main__":
     def worker(man):
         try:
             man.get_converted("txt")
-        except SoelimError:
-            logger.error("SoelimError while converting {}.{}.{} to txt".format(man.name, man.section, man.lang))
+        except SoelimError as e:
+            logger.error("SoelimError ({}) while converting {}.{}.{} to txt".format(str(e), man.name, man.section, man.lang))
         except subprocess.CalledProcessError as e:
             logger.error("CalledProcessError while converting {}.{}.{} to txt:\nreturncode = {}\nstderr = {}"
                          .format(man.name, man.section, man.lang, e.returncode, e.stderr))
