@@ -171,7 +171,7 @@ class ManPage(models.Model):
             query = list(query)
 
             if len(query) == 0:
-                raise SoelimError
+                raise SoelimError("unknown target page: {}".format(stripped.split()[1]))
             elif len(query) == 1:
                 self.converted_content_id = query[0]["content_id"]
             else:
@@ -180,7 +180,7 @@ class ManPage(models.Model):
                     cid = ManPage.objects.values_list("content_id", flat=True) \
                                          .get(section=target_section, name=target_name, lang=self.lang, package_id=self.package_id)
                 except ManPage.DoesNotExist:
-                    raise SoelimError("unknown target page")
+                    raise SoelimError("unknown target page: {}".format(stripped.split()[1]))
                 self.converted_content_id = cid
 
         # save changes to converted_content_id
@@ -205,7 +205,7 @@ class ManPage(models.Model):
             elif level > 100:
                 raise SoelimError("recursion depth exceeded")
 
-        # let's save us some work for the future
+        # resolve "hardlinks" using the .so macro
         self.resolve_so_link()
 
         # always take from converted, even "hardlinks" may be included in other pages
@@ -217,13 +217,16 @@ class ManPage(models.Model):
             target_name = pp.stem
             target_section = pp.suffix[1:]  # strip the dot
 
+            # mandoc uses this fallback for invalid references
+            fallback = "See the file {}.".format(target)
+
             # There are actually packages redirecting their manuals to other packages,
             # e.g. shorewall6 -> shorewall. The attribution info provided on the page
             # isn't entirely correct, but that's what the authors intended...
             mans_count = ManPage.objects.filter(section=target_section, name=target_name, lang=self.lang).count()
 
             if mans_count == 0:
-                raise SoelimError
+                return fallback
             elif mans_count == 1:
                 man = ManPage.objects.get(section=target_section, name=target_name, lang=self.lang)
             else:
@@ -231,10 +234,11 @@ class ManPage(models.Model):
                 try:
                     man = ManPage.objects.get(section=target_section, name=target_name, lang=self.lang, package_id=self.package_id)
                 except ManPage.DoesNotExist:
-                    raise SoelimError("unknown target page")
+                    return fallback
 
             return man.get_preprocessed_content(visited_ids=visited_ids | {self.id}, level=level + 1)
 
+        # resolve the remaining .so file inclusions, apply mandoc-style fallback
         content = re.sub(r"^\.so (?P<target>[A-Za-z0-9@._+\-:\[\]\/]+)\s*$", repl, content, flags=re.MULTILINE)
         return content
 
