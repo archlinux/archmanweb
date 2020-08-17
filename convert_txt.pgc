@@ -144,7 +144,6 @@ void convert()
 
     while (1) {
         EXEC SQL FETCH content INTO :id, :raw_length;
-        printf("%d, %d bytes \n", id, raw_length);
 
         if (allocated_raw < raw_length + 1) {
             char* new_content = realloc(raw, raw_length + 1);
