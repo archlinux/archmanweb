@@ -7,40 +7,9 @@
 {% block content %}
 <article>
 
-<h1>Notes</h1>
-<ul>
-    <li>Git repository: <a href="https://github.com/lahwaacz/archweb_manpages">lahwaacz/archweb_manpages</a></li>
-    <li><a href="https://github.com/lahwaacz/archweb_manpages/issues/1">Quick-start guide</a> for contributors</li>
-    <li><a href="http://mdocml.bsd.lv/">mandoc homepage</a>,
-        <a href="http://mandoc.bsd.lv/cgi-bin/cvsweb/TODO?rev=HEAD">mandoc TODO list</a>
-        </li>
-    <li><a href="{% url 'index' %}man/man.7">man(7)</a> is written in the old language,
-        <a href="{% url 'index' %}man/mdoc.7">mdoc(7)</a> is written in the new language.
-        OpenBSD versions seem to be significantly newer: <a href="http://man.openbsd.org/man.7">man(7)</a>,
-        <a href="http://man.openbsd.org/mdoc.7">mdoc(7)</a> (they are installed as <code>mandoc_man(7)</code>
-        and <code>mandoc_mdoc(7)</code> by the <code>mandoc</code> package in AUR).
-        </li>
-</ul>
-
-Some similar projects:
-<ul>
-    <li><a href="https://manned.org/">manned.org</a> (<a href="https://g.blicky.net/manned.git/">code</a>, <a href="https://bbs.archlinux.org/viewtopic.php?id=145382">Arch BBS thread</a>)</li>
-    <li><a href="http://man7.org/linux/man-pages/">man7.org</a> (no idea about website scripts)</li>
-    <li><a href="https://manpages.debian.org/">manpages.debian.org</a> (<a href="https://github.com/Debian/debiman/">source</a>)</li>
-    <li><a href="http://man.openbsd.org/">man.openbsd.org</a> (runs with the CGI script from the mandoc package)</li>
-</ul>
-
-<h1>TODO</h1>
-<ul>
-    <li>improve page layout and CSS stylesheets</li>
-    <li>full-text search &ndash; see <a href="https://docs.djangoproject.com/en/1.11/ref/contrib/postgres/search/">Django: Full text search</a></li>
-    <li>read the <code>Accept-Language</code> header and display the manual in one of the user's preferred languages</li>
-    <li>import testing repositories (selection of the default package when there are multiple versions would have to be adjusted)</li>
-    <li>when downloading packages, ensure that same packages from different repos don't overwrite themselves (though if pacman does not handle it, it should never happen)</li>
-    <li>create a <a href="https://bbs.archlinux.org/viewtopic.php?pid=1736012#p1736012">REFERENCED BY</a> section for each man page</li>
-</ul>
-
 <h1>Test cases</h1>
+
+These links serve as test cases to ensure that all features still work, they are not useful to regular users.
 
 <h2>URLs with dots</h2>
 <ul class="multi-column" style="columns: 4;">
