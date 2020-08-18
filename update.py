@@ -352,18 +352,10 @@ if __name__ == "__main__":
     if args.keep_tarballs is False:
         finder.clear_pkgcache()
 
-    # update plain-text (convert_txt is fast, but without preprocessor)
-    convert_txt_returncode = None
-    if os.path.isfile("./convert_txt"):
-        _dbs = django.conf.settings.DATABASES["default"]
-        cmd = "./convert_txt --target {}@{} --user {} --password {}" \
-              .format(_dbs["NAME"], _dbs["HOST"] or "localhost", _dbs["USER"], _dbs["PASSWORD"])
-        p = subprocess.run(cmd, shell=True)
-        convert_txt_returncode = p.returncode
-
     # update remaining plain-text which convert_txt could not handle
     # (one transaction per update, otherwise we might hit memory allocation error)
-    def worker(man):
+    def worker(man_id):
+        man = ManPage.objects.get(id=man_id)
         try:
             man.get_converted("txt")
         except SoelimError as e:
@@ -371,9 +363,20 @@ if __name__ == "__main__":
         except subprocess.CalledProcessError as e:
             logger.error("CalledProcessError while converting {}.{}.{} to txt:\nreturncode = {}\nstderr = {}"
                          .format(man.name, man.section, man.lang, e.returncode, e.stderr))
-    queryset = ManPage.objects.only("package", "lang", "content_id", "converted_content_id").filter(content__txt=None).iterator()
+
+    # prepare man page IDs which need to be converted
+    # (queryset needs to be a list for multiprocessing to work)
+    queryset = ManPage.objects.only("package", "lang", "content_id", "converted_content_id").filter(content__txt=None).values_list("id", flat=True)
+    queryset = list(queryset)
+
+    # all existing database connections have to be closed before forking,
+    # each process will then recreate its own connection:
+    # https://stackoverflow.com/a/10684672
+    django.db.connections.close_all()
+
+    # parallel processing of the queryset
     import concurrent.futures
-    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
         executor.map(worker, queryset)
 
     # VACUUM cannot run inside a transaction block
@@ -397,5 +400,4 @@ if __name__ == "__main__":
     log.stats_count_symlinks = SymbolicLink.objects.count()
     log.stats_count_all_pkgs = Package.objects.count()
     log.stats_count_pkgs_with_mans = ManPage.objects.aggregate(Count("package_id", distinct=True))["package_id__count"]
-    log.convert_txt_returncode = convert_txt_returncode
     log.save()
