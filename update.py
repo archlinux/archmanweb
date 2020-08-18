@@ -333,6 +333,8 @@ if __name__ == "__main__":
                         help="path to the cache directory (default: %(default)s)")
     parser.add_argument("--keep-tarballs", action="store_true",
                         help="keep downloaded package tarballs in the cache directory")
+    parser.add_argument("--workers", type=int, default=0,
+                        help="number of workers for parallel processing (0 = use 1 worker per CPU core)")
     args = parser.parse_args()
 
     start = datetime.datetime.now(tz=datetime.timezone.utc)
@@ -376,7 +378,7 @@ if __name__ == "__main__":
 
     # parallel processing of the queryset
     import concurrent.futures
-    with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers or None) as executor:
         executor.map(worker, queryset)
 
     # VACUUM cannot run inside a transaction block
