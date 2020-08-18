@@ -179,7 +179,7 @@ class ManPage(models.Model):
                     cid = ManPage.objects.values_list("content_id", flat=True) \
                                          .get(section=target_section, name=target_name, lang=self.lang, package_id=self.package_id)
                 except ManPage.DoesNotExist:
-                    raise SoelimError("unknown target page: {}".format(stripped.split()[1]))
+                    raise SoelimError("ambiguous target page: {}".format(stripped.split()[1]))
                 self.converted_content_id = cid
 
         # save changes to converted_content_id
