@@ -33,6 +33,18 @@ header > nav > a:not(:last-child) {
     margin-right: 1em;
 }
 
+/* responsive header */
+@media only screen and (max-width: 650px) {
+    header {
+        /* place the items in vertical direction */
+        flex-direction: column;
+    }
+
+    header > :not(:last-child) {
+        margin: 0 0 0.5rem;
+    }
+}
+
 /* simple reset */
 * {
     margin: 0;
@@ -156,6 +168,13 @@ main#content {
 #content-left {
     display: block;
     order: 1;
+    /* max-width of .man-page-content has to be specified here to make it play
+     * nice with flex */
+    max-width: 80ch;
+    /* shrinks to 0 to apply 70% width */
+    flex-shrink: 0;
+    /* sets initial width to 70% */
+    flex-basis: 70%;
 }
 
 #sidebar {
@@ -165,6 +184,19 @@ main#content {
 }
 #sidebar > * {
     margin-bottom: 1em;
+}
+
+/* responsive layout */
+@media only screen and (max-width: 700px) {
+    main#content {
+        /* place the items in vertical direction */
+        flex-direction: column;
+    }
+
+    #content-left,
+    #sidebar {
+        margin: 0 0 1rem;
+    }
 }
 
 /* package info definition list */

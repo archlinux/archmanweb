@@ -3,7 +3,7 @@
  */
 
 .man-page-content {
-    width: 80ch;
+    max-width: 80ch;
 }
 
 .man-page-content div.manual-text {
@@ -329,3 +329,24 @@ a.In { }
 .Li {           font-style: normal;
                 font-weight: normal;
                 font-family: monospace; }
+
+/* Responsive overrides to avoid excessive margins on small devices. */
+
+@media (max-width: 33em) {
+.man-page-content div.manual-text {
+    margin-left: 0em;
+}
+.man-page-content h1.Sh,
+.man-page-content h2.Ss {
+    margin-left: 0em;
+}
+/* the following rules are copied from mandoc.css */
+.Bd-indent {    margin-left: 2em; }
+.Bl-hang > dd {
+                margin-left: 2em; }
+.Bl-tag {       margin-left: 2em; }
+.Bl-tag > dt {
+                margin-left: -2em; }
+.HP {           margin-left: 2em;
+                text-indent: -2em; }
+}
