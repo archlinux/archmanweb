@@ -1,14 +1,11 @@
-body {
-  margin: 0;
-}
-
 header {
     padding: 10px 15px;
     background: #333;
     border-bottom: 5px #08c solid;
-    color: white;
+    color: white !important;
     display: flex;
     justify-content: space-between;
+    align-items: center;
     font-family: sans-serif;
 }
 header > h1 {
@@ -16,27 +13,141 @@ header > h1 {
     margin: 0;
 }
 header > nav {
-    /* equal to the difference between font sizes of header>h1 and header>nav>a */
-    margin-top: 0.25em;
+    margin-bottom: 0;
 }
 header > nav > a {
     font-weight: bold;
     font-size: 1em;
     text-decoration: none;
-    color: #999;
+    color: #999 !important;
 }
 header > nav > a:focus,
 header > nav > a:hover {
     text-decoration: underline;
-    color: white;
+    color: white !important;
 }
 header > nav > a.selected {
-    color: white;
+    color: white !important;
 }
 header > nav > a:not(:last-child) {
     margin-right: 1em;
 }
 
+/* simple reset */
+* {
+    margin: 0;
+    padding: 0;
+    line-height: 1.4;
+}
+
+/* general styling */
+body {
+/*    background: #f6f9fc; */
+    color: #222;
+    font: normal 100% sans-serif;
+}
+
+p {
+    margin: .33em 0 1em;
+}
+
+ol,
+ul {
+    margin-bottom: 1em;
+    padding-left: 2em;
+}
+
+ul {
+    list-style: square;
+}
+
+code {
+    font: 1.2em monospace;
+    background: #ffd;
+    padding: 0.15em 0.25em;
+}
+
+pre {
+    font: 1.2em monospace;
+    border: 1px solid #bdb;
+    background: #dfd;
+    padding: 0.5em;
+    margin: 1em;
+}
+
+pre code {
+    display: block;
+    background: none;
+    overflow: auto;
+}
+
+nav {
+    margin-bottom: 1em;
+}
+
+input {
+    vertical-align: middle;
+}
+
+input[type=search] {
+    padding: 0.10em;
+}
+
+input[type=submit] {
+    padding: 0.1em 0.6em;
+}
+
+/* scale fonts down to a sane default (16 * .875 = 14px) */
+#content {
+    font-size: 0.875em;
+}
+
+/* Arch style for links */
+a {
+    text-decoration: none;
+}
+
+a:link,
+th a:visited {
+    color: #07b;
+}
+
+a:visited {
+    color: #666;
+}
+
+a:hover {
+    text-decoration: underline;
+    color: #666;
+}
+
+a:active {
+    color: #e90;
+}
+
+/* headings */
+h2 {
+    font-size: 1.5em;
+    margin-bottom: 0.5em;
+    border-bottom: 1px solid #888;
+}
+
+h3 {
+    font-size: 1.25em;
+    margin-top: .5em;
+}
+
+h4 {
+    font-size: 1.15em;
+    margin-top: 1em;
+}
+
+h5 {
+    font-size: 1em;
+    margin-top: 1em;
+}
+
+/* general layout */
 main#content {
     display: flex;
     margin: 1em;
@@ -71,6 +182,7 @@ article.single-column-content {
     width: 100%;
 }
 
+/* multi-column lists (used for listings) */
 ul.multi-column,
 ol.multi-column {
     column-width: 20em;
@@ -79,18 +191,41 @@ ol.multi-column {
 }
 ul.multi-column > li,
 ol.multi-column > li {
-    margin-left: 2em; /* needed to preserve bullets/numbers in multi-column layout */
+    /* needed to preserve bullets/numbers in multi-column layout */
+    margin-left: 2em;
 }
 
-/* last-updates table */
-table.last-updates {
-    text-align: left;
-}
-table.last-updates th,
-table.last-updates td {
-    padding-right: 1em;
-}
-
+/* definition lists in search results */
 section.search-results-pkg dl {
     margin: 0;
+}
+
+/* styled tables */
+table.styled-table {
+    background: #ecf2f5 none repeat scroll 0 0;
+    border: 1px solid #bcd;
+    margin-bottom: 1.5em;
+    padding: 0.65em;
+    font-size: 1.00em;
+    border-collapse: collapse;
+}
+
+table.styled-table tr td,
+table.styled-table th {
+    padding: 0.35em 0.90em;
+    text-align: left;
+    white-space: nowrap;
+}
+
+table.styled-table th {
+    background: rgb(217, 230, 236) none repeat scroll 0 0;
+    border-bottom: 1px solid #bcd;
+}
+
+table.styled-table tr:hover {
+    background-color: rgb(228, 237, 241)
+}
+
+table.styled-table tr td {
+    border-top: 1px dotted #bcd;
 }

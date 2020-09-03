@@ -33,6 +33,13 @@
     padding: 0px;
 }
 
+/* override top margin for paragraphs (needs to be the same as bottom margin,
+ * because mandoc creates <section> tags with the first paragraph outside <p>
+ */
+.man-page-content p {
+    margin: 1em 0;
+}
+
 
 /*
  * Custom styles for mandoc elements.
@@ -43,10 +50,12 @@
 .man-page-content h1.Sh {
     font-size: 1.25em;
     margin-left: -4ex;
+    border-bottom: none;
 }
 .man-page-content h2.Ss {
     font-size: 1.1em;
     margin-left: -2ex;
+    border-bottom: none;
 }
 
 /* fancy anchor links */
@@ -94,6 +103,16 @@
 
 /* override overflow:auto -> overflow:initial (a scrollbar sometimes appeared with auto) */
 .man-page-content dd.It-tag { overflow:initial; }
+
+/* hide <br> tags which are the only child of a paragraph */
+.man-page-content p > br {
+    display: none;
+}
+
+/* hide <br> tags immediately following a <pre> tag */
+.man-page-content pre + br {
+    display: none;
+}
 
 
 /*
