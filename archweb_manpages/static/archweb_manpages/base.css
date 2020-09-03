@@ -167,17 +167,17 @@ main#content {
     margin-bottom: 1em;
 }
 
-.package-info > table {
-    padding-left: 1.25em;
+/* package info definition list */
+.package-info > dl {
+    padding-left: 1em;
 }
-.package-info td {
-    padding: 0;
-}
-.package-info td:not(:first-child) {
-    padding-left: 1ex;
+.package-info dd {
+    padding-left: 1em;
+    word-break: break-word;
 }
 
-/* needs to be explicit because the main#content has display:flex */
+/* workaround for multi-column lists in the listing view
+ * (width needs to be explicit because the main#content has display:flex) */
 article.single-column-content {
     width: 100%;
 }

@@ -20,30 +20,18 @@
 {% block sidebar %}
 <section class="package-info">
     <p>Package information:</p>
-    <table>
-        <tbody>
-        <tr>
-            <td>Package:</td>
-            <td><a href="https://www.archlinux.org/packages/{{ pkg.repo }}/{{ pkg.arch }}/{{ pkg.name }}/">{{ pkg.repo }}/{{ pkg.name }}</a></td>
-        </tr>
-        <tr>
-            <td>Version:</td>
-            <td>{{ pkg.version }}</td>
-        </tr>
-        <tr>
-            <td>Upstream:</td>
-            <td><a href="{{ pkg.url }}">{{ pkg.url }}</a></td>
-        </tr>
-        <tr>
-            <td>Licenses:</td>
-            <td>{{ pkg.licenses | join:", " }}</td>
-        </tr>
-        <tr>
-            <td>Manuals:</td>
-            <td><a href="{% url 'listing' %}{{ pkg.repo }}/{{ pkg.name }}/">{% url 'listing' %}{{ pkg.repo }}/{{ pkg.name }}/</a></td>
-        </tr>
-        </tbody>
-    </table>
+    <dl>
+        <dt>Package name:</dt>
+        <dd><a href="https://www.archlinux.org/packages/{{ pkg.repo }}/{{ pkg.arch }}/{{ pkg.name }}/">{{ pkg.repo }}/{{ pkg.name }}</a></dd>
+        <dt>Version:</dt>
+        <dd>{{ pkg.version }}</dd>
+        <dt>Upstream:</dt>
+        <dd><a href="{{ pkg.url }}">{{ pkg.url }}</a></dd>
+        <dt>Licenses:</dt>
+        <dd>{{ pkg.licenses | join:", " }}</dd>
+        <dt>Manuals:</dt>
+        <dd><a href="{% url 'listing' %}{{ pkg.repo }}/{{ pkg.name }}/">{% url 'listing' %}{{ pkg.repo }}/{{ pkg.name }}/</a></dd>
+    </dl>
 </section>
 
 <details>
