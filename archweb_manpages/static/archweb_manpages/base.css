@@ -85,12 +85,15 @@ pre {
     background: #dfd;
     padding: 0.5em;
     margin: 1em;
+    overflow: auto;
+    white-space: pre-wrap;
 }
 
 pre code {
     display: block;
     background: none;
     overflow: auto;
+    white-space: pre-wrap;
 }
 
 nav {
