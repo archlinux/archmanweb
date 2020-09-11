@@ -1,4 +1,5 @@
 import re
+import textwrap
 
 from django.urls import reverse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -81,6 +82,14 @@ def postprocess(text, content_type, lang):
         text = xref_pattern.sub("<a href='" + reverse("index") + "man/" + r"\g<man_name>.\g<section>." + lang +
                                         "'>\g<man_name>(\g<section>)</a>",
                                 text)
+        # remove empty tags
+        text = re.sub(r"\<(?P<tag>[^ >]+)[^>]*\>(\s|&nbsp;)*\</(?P=tag)\>\n?", "", text)
+        # strip leading and trailing newlines and remove common indentation
+        # from the text inside <pre> tags
+        _pre_tag_pattern = re.compile(r"\<pre\>(.+?)\</pre\>", flags=re.DOTALL)
+        text = _pre_tag_pattern.sub(lambda match: "<pre>" + textwrap.dedent(match.group(1).strip("\n")) + "</pre>", text)
+        # remove <br/> tags following a <pre> or <div> tag
+        text = re.sub(r"(?<=\</(pre|div)\>)\n?<br/>", "", text)
         return text
     elif content_type == "txt":
         # strip mandoc's back-spaced encoding
