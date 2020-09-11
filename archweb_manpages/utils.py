@@ -33,44 +33,6 @@ def paginate(request, url_param, query, limit):
         query = paginator.page(paginator.num_pages)
     return query
 
-# very slow on long pages, but we keep it if we need to validate the regex-only version below
-def postprocess_bs(html, lang):
-    import bs4
-
-#    soup = bs4.BeautifulSoup(html, "html.parser")
-    soup = bs4.BeautifulSoup(html, "lxml")
-
-    # TODO: bind to database query?
-    section_names = {"0", "0p", "1", "1p", "2", "3", "3p", "4", "5", "6", "7", "8", "9", "n"}
-    section_pattern = r"^\((?P<section>" + "|".join(section_names) + r")\)"
-
-    def replace_link(tag, following, prefix, man_section):
-        man_name = tag.string
-
-        # change tag into <a>
-        tag.name = "a"
-        tag["href"] = reverse_man_url("", "", man_name, man_section, lang, "")
-#        tag["class"] = "Xr"
-        tag.string = "{}({})".format(man_name, man_section)
-
-        # strip section from the following text
-        text = following[len(prefix):]
-        following.replaceWith(text)
-
-    for tag in soup.find_all(["b", "i", "strong", "em", "mark"]):
-        following = tag.next_sibling
-        # check if followed by plain text
-        if following is not None and following.name is None:
-            # check if the following text looks like a section
-            match = re.match(section_pattern, following.string)
-            if match:
-                prefix = match.group(0)
-                section = match.group("section")
-                replace_link(tag, following, prefix, section)
-
-    # return the content of the <body> tag
-    return soup.body.decode_contents(formatter="html")
-
 def postprocess(text, content_type, lang):
     assert content_type in {"html", "txt"}
     if content_type == "html":
@@ -117,7 +79,6 @@ def postprocess(text, content_type, lang):
     elif content_type == "txt":
         # strip mandoc's back-spaced encoding
         return re.sub(".\b", "", text, flags=re.DOTALL)
-
 
 def normalize_html_entities(s):
     def repl(match):
