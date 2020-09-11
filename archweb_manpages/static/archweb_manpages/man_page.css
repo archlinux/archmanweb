@@ -121,8 +121,10 @@
 
 /*
  * The following rules were copied from the upstream mandoc.css file and modified:
- * - margins of ".Bl-hang > dd", ".Bl-tag" and ".Bl-tag > dt" were changed from
- *   5.5em to 3.8em to match ".Bd-indent"
+ * - Margins of ".Bl-hang > dd", ".Bl-tag" and ".Bl-tag > dt" were changed from
+ *   5.5em to 3.8em to match ".Bd-indent".
+ * - "font-family" was removed from all rules. The font family should be assigned
+ *   to tags, not to tag classes.
  */
 
 /* Header and footer lines. */
@@ -260,23 +262,18 @@ h2.Ss {         margin-top: 1.2em;
 
 table.Nm { }
 code.Nm {       font-style: normal;
-                font-weight: bold;
-                font-family: inherit; }
+                font-weight: bold; }
 .Fl {           font-style: normal;
-                font-weight: bold;
-                font-family: inherit; }
+                font-weight: bold; }
 .Cm {           font-style: normal;
-                font-weight: bold;
-                font-family: inherit; }
+                font-weight: bold; }
 .Ar {           font-style: italic;
                 font-weight: normal; }
 .Op {           display: inline; }
 .Ic {           font-style: normal;
-                font-weight: bold;
-                font-family: inherit; }
+                font-weight: bold; }
 .Ev {           font-style: normal;
-                font-weight: normal;
-                font-family: monospace; }
+                font-weight: normal; }
 .Pa {           font-style: italic;
                 font-weight: normal; }
 
@@ -284,17 +281,14 @@ code.Nm {       font-style: normal;
 
 .Lb { }
 code.In {       font-style: normal;
-                font-weight: bold;
-                font-family: inherit; }
+                font-weight: bold; }
 a.In { }
 .Fd {           font-style: normal;
-                font-weight: bold;
-                font-family: inherit; }
+                font-weight: bold; }
 .Ft {           font-style: italic;
                 font-weight: normal; }
 .Fn {           font-style: normal;
-                font-weight: bold;
-                font-family: inherit; }
+                font-weight: bold; }
 .Fa {           font-style: italic;
                 font-weight: normal; }
 .Vt {           font-style: italic;
@@ -302,11 +296,9 @@ a.In { }
 .Va {           font-style: italic;
                 font-weight: normal; }
 .Dv {           font-style: normal;
-                font-weight: normal;
-                font-family: monospace; }
+                font-weight: normal; }
 .Er {           font-style: normal;
-                font-weight: normal;
-                font-family: monospace; }
+                font-weight: normal; }
 
 /* Various semantic markup. */
 
@@ -314,8 +306,7 @@ a.In { }
 .Lk { }
 .Mt { }
 .Cd {           font-style: normal;
-                font-weight: bold;
-                font-family: inherit; }
+                font-weight: bold; }
 .Ad {           font-style: italic;
                 font-weight: normal; }
 .Ms {           font-style: normal;
@@ -333,8 +324,7 @@ a.In { }
 .Sy {           font-style: normal;
                 font-weight: bold; }
 .Li {           font-style: normal;
-                font-weight: normal;
-                font-family: monospace; }
+                font-weight: normal; }
 
 /* Responsive overrides to avoid excessive margins on small devices. */
 
