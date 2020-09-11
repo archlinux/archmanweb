@@ -70,42 +70,41 @@ def postprocess_bs(html, lang):
     # return the content of the <body> tag
     return soup.body.decode_contents(formatter="html")
 
-_xref_pattern = re.compile(r"\<(?P<tag>b|i|strong|em|mark)\>"
-                           r"(?P<man_name>[A-Za-z0-9@._+\-:\[\]]+)"
-                           r"\<\/\1\>"
-                           r"\((?P<section>\d[a-z]{,3})\)")
-_backspace_pattern = re.compile(".\b", flags=re.DOTALL)
 def postprocess(text, content_type, lang):
     assert content_type in {"html", "txt"}
     if content_type == "html":
-        return _xref_pattern.sub("<a href='" + reverse("index") + "man/" + r"\g<man_name>.\g<section>." + lang +
+        # replace references with links
+        xref_pattern = re.compile(r"\<(?P<tag>b|i|strong|em|mark)\>"
+                                  r"(?P<man_name>[A-Za-z0-9@._+\-:\[\]]+)"
+                                  r"\<\/\1\>"
+                                  r"\((?P<section>\d[a-z]{,3})\)")
+        text = xref_pattern.sub("<a href='" + reverse("index") + "man/" + r"\g<man_name>.\g<section>." + lang +
                                         "'>\g<man_name>(\g<section>)</a>",
                                 text)
+        return text
     elif content_type == "txt":
         # strip mandoc's back-spaced encoding
-        return _backspace_pattern.sub("", text)
+        return re.sub(".\b", "", text, flags=re.DOTALL)
 
 
-_html_entity_pattern = re.compile(r"&#(x?)([0-9a-fA-F]+);")
 def normalize_html_entities(s):
     def repl(match):
         # TODO: add some error checking
         if match.group(1):
             return chr(int(match.group(2), 16))
         return chr(int(match.group(2)))
-    return _html_entity_pattern.sub(repl, s)
+    return re.sub(r"&#(x?)([0-9a-fA-F]+);", repl, s)
 
-_norm_pattern = re.compile(r"\s+")
-_headings_pattern = re.compile(r"\<h1[^\>]*\>[^\<\>]*"
-                               r"\<a class=(\"|\')permalink(\"|\') href=(\"|\')#(?P<id>\S+)(\"|\')\>"
-                               r"(?P<title>.+?)"
-                               r"\<\/a\>[^\<\>]*"
-                               r"\<\/h1\>", re.DOTALL)
 def extract_headings(html):
     def normalize(title):
-        return _norm_pattern.sub(" ", title)
+        return re.sub(r"\s+", " ", title)
     result = []
-    for match in _headings_pattern.finditer(html):
+    headings_pattern = re.compile(r"\<h1[^\>]*\>[^\<\>]*"
+                                  r"\<a class=(\"|\')permalink(\"|\') href=(\"|\')#(?P<id>\S+)(\"|\')\>"
+                                  r"(?P<title>.+?)"
+                                  r"\<\/a\>[^\<\>]*"
+                                  r"\<\/h1\>", re.DOTALL)
+    for match in headings_pattern.finditer(html):
         id = normalize_html_entities(match.group("id"))
         title = normalize_html_entities(normalize(match.group("title")))
         result.append(dict(id=id, title=title))
