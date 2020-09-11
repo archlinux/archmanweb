@@ -127,6 +127,7 @@
  *   to tags, not to tag classes.
  * - ".Nd" is styled with "display: inline;"
  * - ".HP" is removed/disabled (deprecated macro, cannot be represented in HTML)
+ * - added ".Bd-indent > pre:only-child" to cancel useless indentation of pre tags
  */
 
 /* Header and footer lines. */
@@ -168,6 +169,12 @@ h2.Ss {         margin-top: 1.2em;
 
 .Bd { }
 .Bd-indent {    margin-left: 3.8em; }
+/* cancel useless indentation of pre tags (leave visual left margin of 1em) */
+.Bd-indent > pre:only-child {
+                margin-left: -2.8em; }
+/* cancel useless double-indent */
+.Bd-indent > .Bd-indent:only-child {
+                margin-left: 0em; }
 
 .Bl-bullet {    list-style-type: disc;
                 padding-left: 1em; }
