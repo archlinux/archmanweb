@@ -239,19 +239,6 @@ class ManPage(models.Model):
 
         # resolve the remaining .so file inclusions, apply mandoc-style fallback
         content = re.sub(r"^\.so (?P<target>[A-Za-z0-9@._+\-:\[\]\/]+)\s*$", repl, content, flags=re.MULTILINE)
-
-        # pre-process plain-text URLs
-        # see https://jlk.fjfi.cvut.cz/arch/manpages/man/man.7.en#Hypertext_link_macros
-        def repl_url(match):
-            repl = ""
-            if match.group("prefix"):
-                repl += match.group("prefix") + "\n"
-            repl += ".UR " + match.group("url") + "\n"
-            repl += ".UE " + match.group("suffix")
-            return repl;
-        content = re.sub(r"^(?!\.)(?P<prefix>.*?)(?P<angle><)?(?P<url>https?://\S+(?<=[\w/]))(?(angle)>|)(?P<suffix>.*?)$",
-                         repl_url, content, flags=re.MULTILINE)
-
         return content
 
     @staticmethod
