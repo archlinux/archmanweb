@@ -104,17 +104,14 @@
 /* override overflow:auto -> overflow:initial (a scrollbar sometimes appeared with auto) */
 .man-page-content dd.It-tag { overflow:initial; }
 
-/* hide <br> tags which are the only child of a paragraph */
-.man-page-content p > br {
+/* hide <br> tags immediately following a block tag (pre or div) */
+.man-page-content pre + br,
+.man-page-content div + br {
     display: none;
 }
-
-/* hide <br> tags immediately following a <pre> tag */
-.man-page-content pre + br {
-    display: none;
-}
-/* hide <br> tags which are the first child node */
-.man-page-content br:first-child {
+/* hide <br> tags which are the first or the last child node */
+.man-page-content br:first-child,
+.man-page-content br:last-child {
     display: none;
 }
 
