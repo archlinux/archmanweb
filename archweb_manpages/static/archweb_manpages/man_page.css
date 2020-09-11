@@ -120,7 +120,9 @@
 
 
 /*
- * The following rules were copied from the upstream mandoc.css file.
+ * The following rules were copied from the upstream mandoc.css file and modified:
+ * - margins of ".Bl-hang > dd", ".Bl-tag" and ".Bl-tag > dt" were changed from
+ *   5.5em to 3.8em to match ".Bd-indent"
  */
 
 /* Header and footer lines. */
@@ -190,7 +192,7 @@ h2.Ss {         margin-top: 1.2em;
 .Bl-hang { }
 .Bl-hang > dt { }
 .Bl-hang > dd {
-                margin-left: 5.5em; }
+                margin-left: 3.8em; }
 .Bl-inset { }
 .Bl-inset > dt { }
 .Bl-inset > dd {
@@ -200,11 +202,11 @@ h2.Ss {         margin-top: 1.2em;
 .Bl-ohang > dd {
                 margin-left: 0em; }
 .Bl-tag {       margin-top: 0.6em;
-                margin-left: 5.5em; }
+                margin-left: 3.8em; }
 .Bl-tag > dt {
                 float: left;
                 margin-top: 0em;
-                margin-left: -5.5em;
+                margin-left: -3.8em;
                 padding-right: 0.5em;
                 vertical-align: top; }
 .Bl-tag > dd {
