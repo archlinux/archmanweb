@@ -126,6 +126,7 @@
  * - "font-family" was removed from all rules. The font family should be assigned
  *   to tags, not to tag classes.
  * - ".Nd" is styled with "display: inline;"
+ * - ".HP" is removed/disabled (deprecated macro, cannot be represented in HTML)
  */
 
 /* Header and footer lines. */
@@ -256,8 +257,11 @@ h2.Ss {         margin-top: 1.2em;
 .eqn { }
 .tbl td {       vertical-align: middle; }
 
+/* NOTE: .HP is only placed on <p> tags, this selector conflicts with ".man-page-content p"
+   and the .HP macro is deprecated anyway (its meaning cannot be represented exactly in HTML)
 .HP {           margin-left: 3.8em;
                 text-indent: -3.8em; }
+*/
 
 /* Semantic markup for command line utilities. */
 
