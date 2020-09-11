@@ -125,6 +125,7 @@
  *   5.5em to 3.8em to match ".Bd-indent".
  * - "font-family" was removed from all rules. The font family should be assigned
  *   to tags, not to tag classes.
+ * - ".Nd" is styled with "display: inline;"
  */
 
 /* Header and footer lines. */
@@ -147,7 +148,7 @@ td.foot-os {    text-align: right; }
 
 .manual-text {
                 margin-left: 3.8em; }
-.Nd { }
+.Nd {           display: inline; }
 section.Sh { }
 h1.Sh {         margin-top: 1.2em;
                 margin-bottom: 0.6em;
