@@ -113,6 +113,10 @@
 .man-page-content pre + br {
     display: none;
 }
+/* hide <br> tags which are the first child node */
+.man-page-content br:first-child {
+    display: none;
+}
 
 
 /*
