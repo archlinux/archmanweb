@@ -70,9 +70,41 @@
     content: " ¶";
 }
 
-/* tables are generally not aligned */
-.man-page-content table td {
-    min-width: 5em;
+/* Arch-styled tables
+ * style copied from base.css and changed:
+ * - applied to the "tbl" class
+ * - removed "white-space: nowrap"
+ * - "th" style applied also to "td" in the first row
+ */
+.man-page-content table.tbl {
+    background: #ecf2f5 none repeat scroll 0 0;
+    border: 1px solid #bcd;
+    margin-bottom: 1.5em;
+    padding: 0.65em;
+    font-size: 1.00em;
+    border-collapse: collapse;
+}
+
+.man-page-content table.tbl tr td,
+.man-page-content table.tbl th {
+    padding: 0.35em 0.90em;
+    text-align: left;
+}
+
+.man-page-content table.tbl th,
+.man-page-content table.tbl tr:first-child td:not(:only-child) {
+    background: rgb(217, 230, 236) none repeat scroll 0 0;
+    border-bottom: 1px solid #bcd;
+    font-weight: bold;
+}
+
+.man-page-content table.tbl tr:hover {
+    background-color: rgb(228, 237, 241)
+}
+
+.man-page-content table.tbl tr td {
+    border-top: 1px dotted #bcd;
+    border-bottom: 1px dotted #bcd;
 }
 
 /*
