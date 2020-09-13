@@ -7,7 +7,7 @@ from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 
-from .utils import reverse_man_url, postprocess
+from .utils import reverse_man_url, postprocess, extract_description
 
 # django does not support functional indexes (indexes on expressions) out of the box,
 # otherwise we could use just this:
@@ -69,6 +69,9 @@ class Content(models.Model):
 
     # plain-text version of the content - should be always present to make full-text search possible
     txt = models.TextField(blank=True, null=True)
+
+    # short plain-text description for full-text ("apropos-like") search
+    description = models.TextField(blank=True, null=True)
 
 
 class ManPage(models.Model):
@@ -264,6 +267,11 @@ class ManPage(models.Model):
             content = self._convert(content, output_type, self.lang)
             content = postprocess(content, output_type, self.lang)
             self.set_content(output_type, content)
+
+            if output_type == "txt":
+                # update plain-text description
+                description = extract_description(content)
+                Content.objects.filter(id=self.converted_content_id).update(description=description)
 
         return content
 

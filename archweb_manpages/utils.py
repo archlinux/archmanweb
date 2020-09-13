@@ -102,3 +102,11 @@ def extract_headings(html):
         title = normalize_html_entities(normalize(match.group("title")))
         result.append(dict(id=id, title=title))
     return result
+
+def extract_description(text):
+    desc_gen = re.finditer(r"(?<=^NAME$)(?P<description>.+?)(?=^\w)", text, flags=re.MULTILINE | re.DOTALL)
+    try:
+        description = next(desc_gen).group("description")
+    except StopIteration:
+        return None
+    return textwrap.dedent(description.strip("\n"))
