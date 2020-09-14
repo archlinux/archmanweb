@@ -104,9 +104,13 @@ def extract_headings(html):
     return result
 
 def extract_description(text):
-    desc_gen = re.finditer(r"(?<=^NAME$)(?P<description>.+?)(?=^\w)", text, flags=re.MULTILINE | re.DOTALL)
+    desc_gen = re.finditer(r"(?<=^NAME$)(?P<description>.+?)(?=^\S)", text, flags=re.MULTILINE | re.DOTALL)
     try:
         description = next(desc_gen).group("description")
     except StopIteration:
         return None
-    return textwrap.dedent(description.strip("\n"))
+    description = textwrap.dedent(description.strip("\n"))
+    # keep max 2 paragraphs separated by a blank line
+    # (some pages contain a lot of text in the NAME section, e.g. owncloud(1) or qwtlicense(3))
+    description = "\n\n".join(description.split("\n\n")[:2])
+    return description
