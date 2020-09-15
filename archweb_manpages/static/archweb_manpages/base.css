@@ -230,11 +230,6 @@ ol.multi-column > li {
     margin-left: 2em;
 }
 
-/* definition lists in search results */
-section.search-results-pkg dl {
-    margin: 0;
-}
-
 /* styled tables */
 table.styled-table {
     background: #ecf2f5 none repeat scroll 0 0;

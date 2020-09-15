@@ -12,7 +12,7 @@
 {% block content %}
 <article>
 
-<section class="search-results-man">
+<section class="search-results">
     <h2>Results for <em>{{ request.GET.q }}</em> in manual names</h2>
     <ol start="{{ man_results.start_index }}">
     {% for man in man_results %}
@@ -31,7 +31,7 @@
     {% endif %}
 </section>
 
-<section class="search-results-apropos">
+<section class="search-results">
     <h2>Results for <em>{{ request.GET.q }}</em> in manual descriptions ("apropos")</h2>
     <ol start="{{ apropos_results.start_index }}">
     {% for man in apropos_results %}
@@ -55,7 +55,7 @@
     {% endif %}
 </section>
 
-<section class="search-results-pkg">
+<section class="search-results">
     <h2>Results for <em>{{ request.GET.q }}</em> in package names and descriptions</h2>
     <ol start="{{ pkg_results.start_index }}">
     {% for pkg in pkg_results %}
