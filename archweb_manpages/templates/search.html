@@ -31,6 +31,30 @@
     {% endif %}
 </section>
 
+<section class="search-results-apropos">
+    <h2>Results for <em>{{ request.GET.q }}</em> in manual descriptions ("apropos")</h2>
+    <ol start="{{ apropos_results.start_index }}">
+    {% for man in apropos_results %}
+        <li>
+            <dl>
+                <dt>
+                    <a href="{% reverse_man_url man.package__repo man.package__name man.name man.section man.lang '' %}">{{ man.name }}({{ man.section }})</a>
+                    [{{ man.lang }}]
+                    (from the <a href="{% url 'listing' %}{{ man.package__repo }}/{{ man.package__name }}/">{{ man.package__repo }}/{{ man.package__name }}</a> package)
+                </dt>
+                <dd>{{ man.desc_snippet | safe }}</dd>
+            </dl>
+        </li>
+    {% empty %}
+        No results.
+    {% endfor%}
+    </ol>
+
+    {% if apropos_results.paginator.num_pages != 1 %}
+        {% pagination_links request apropos_results 'page_apropos' %}
+    {% endif %}
+</section>
+
 <section class="search-results-pkg">
     <h2>Results for <em>{{ request.GET.q }}</em> in package names and descriptions</h2>
     <ol start="{{ pkg_results.start_index }}">

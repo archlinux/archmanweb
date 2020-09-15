@@ -24,7 +24,8 @@ class SearchVectorIndex(GinIndex):
     def create_sql(self, model, schema_editor, **kwargs):
         statement = super().create_sql(model, schema_editor, **kwargs)
         # this works only for one column, otherwise we get a list inside to_tsvector
-        statement.template = "CREATE INDEX %(name)s ON %(table)s%(using)s (to_tsvector('" + self.config + "'::regconfig, %(columns)s))%(extra)s"
+        # note: coalesce is used because Django uses it even for SearchVector on one column
+        statement.template = "CREATE INDEX %(name)s ON %(table)s%(using)s (to_tsvector('" + self.config + "'::regconfig, COALESCE(%(columns)s, '')))%(extra)s"
         return statement
 
 class Package(models.Model):
@@ -72,6 +73,11 @@ class Content(models.Model):
 
     # short plain-text description for full-text ("apropos-like") search
     description = models.TextField(blank=True, null=True)
+
+    class Meta:
+        indexes = (
+            SearchVectorIndex(name="content_description_search", fields=["description"], config="english"),
+        )
 
 
 class ManPage(models.Model):

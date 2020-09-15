@@ -1,9 +1,9 @@
 from django.shortcuts import render
 from django.http import HttpResponse, Http404, HttpResponseRedirect
-from django.db.models import Count
-from django.contrib.postgres.search import TrigramSimilarity
+from django.db.models import Count, Q
+from django.contrib.postgres.search import TrigramSimilarity, SearchQuery, SearchVector, SearchHeadline, SearchRank
 
-from .models import Package, ManPage, SymbolicLink, UpdateLog, SoelimError
+from .models import Package, Content, ManPage, SymbolicLink, UpdateLog, SoelimError
 from .utils import reverse_man_url, paginate, extract_headings
 
 def index(request):
@@ -314,10 +314,11 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
 
     return render(request, "man_page.html", context)
 
-# references:
-#   https://www.postgresql.org/docs/current/static/pgtrgm.html
-#   https://www.postgresql.org/docs/current/static/textsearch.html
-#   https://docs.djangoproject.com/en/1.11/ref/contrib/postgres/search/
+# References:
+# - https://www.postgresql.org/docs/current/static/pgtrgm.html
+# - https://www.postgresql.org/docs/current/static/textsearch.html
+# - https://www.postgresql.org/docs/current/static/functions-textsearch.html
+# - https://www.postgresql.org/docs/current/static/textsearch-controls.html#textsearch-headline
 def search(request):
     term = request.GET["q"]
 
@@ -334,26 +335,118 @@ def search(request):
                                       .annotate(similarity=TrigramSimilarity("from_name", term)),
                   all=True) \
            .order_by("-similarity", "name", "section", "lang")
-    man_results = paginate(request, "page_man", man_results, 20)
 
-#    pkg_results = Package.objects.values("repo", "name", "description") \
-#                                 .filter(name__trigram_similar=term) \
-#                                 .annotate(similarity=TrigramSimilarity("name", term)) \
-#                                 .order_by("-similarity", "name", "repo")
-    pkg_results = Package.objects.only("repo", "name").extra(
-            select={
-                "desc_snippet": "ts_headline('english', description, plainto_tsquery(%s))",
-                "rank": "similarity(name, %s) + 2 * ts_rank(to_tsvector('english', description), plainto_tsquery(%s), 32)",
-            },
-            where=["name %% %s OR to_tsvector('english', description) @@ plainto_tsquery(%s)"],
-            params=[term, term],
-            select_params=[term, term, term],
-            order_by=('-rank', ),
-        )
+    # full-text search objects: https://docs.djangoproject.com/en/3.1/ref/contrib/postgres/search/
+    ts_query = SearchQuery(term)
+    ts_vector = SearchVector("description", config="english")
+    ts_headline = SearchHeadline("description", ts_query, start_sel="<b>", stop_sel="</b>")
+    #ts_rank = SearchRank(ts_vector, ts_query, normalization=32)
+    ts_sim_rank = TrigramSimilarity("name", term) + 2 * SearchRank(ts_vector, ts_query, normalization=32)
+
+    # For the search in man page descriptions ("apropos") we need to perform a raw SQL query,
+    # because it is not possible to express the same query with Django ORM.
+    # Notes:
+    # - the subquery (i.e. INNER JOIN (...) AS subquery) is necessary for good performance
+    # - INNER JOIN instead of LEFT OUTER JOIN is needed on the subquery, otherwise PostgreSQL
+    #   will not use the GIN index
+    # - WITH is used for convenience to avoid repeating the ts_rank expression in the WHERE clause
+    #   https://www.postgresql.org/docs/current/queries-with.html
+    package_table = Package.objects.model._meta.db_table
+    content_table = Content.objects.model._meta.db_table
+    manpage_table = ManPage.objects.model._meta.db_table
+    content_results = f"""
+            WITH content_search AS (
+                SELECT "{content_table}"."id",
+                       ts_headline("{content_table}"."description", plainto_tsquery(%s), 'StartSel=''<b>'', StopSel=''</b>''') AS "desc_snippet",
+                       ts_rank(to_tsvector('english'::regconfig, COALESCE("{content_table}"."description", '')), plainto_tsquery(%s), 32) AS "rank",
+                       to_tsvector('english'::regconfig, COALESCE("{content_table}"."description", '')) AS "search"
+                FROM "{content_table}"
+            )
+            SELECT *
+            FROM "content_search" WHERE "search" @@ plainto_tsquery(%s) AND "rank" > 0.001"""
+    apropos_results = ManPage.objects.raw(f"""
+            SELECT "{manpage_table}"."id",
+                   "{manpage_table}"."name",
+                   "{manpage_table}"."section",
+                   "{manpage_table}"."lang",
+                   "{package_table}"."repo" AS "package__repo",
+                   "{package_table}"."name" AS "package__name",
+                   "desc_snippet",
+                   "rank"
+            FROM "{manpage_table}" INNER JOIN "{package_table}" ON ("{manpage_table}"."package_id" = "{package_table}"."id")
+                INNER JOIN ({content_results}) AS subquery ON ("{manpage_table}"."converted_content_id" = "subquery"."id")
+            ORDER BY "rank" DESC, "{manpage_table}"."name" ASC, "{manpage_table}"."section" ASC, "{manpage_table}"."lang" ASC, "package__name" ASC, "package__repo" ASC""",
+            [term, term, term])
+    # NOTE: Some other things that were tried with Django ORM (as of Django 3.1):
+    # 1. We could do this if we did not need a subquery (this works, but is slow):
+    #    apropos_results = ManPage.objects.values("name", "section", "lang", "package__repo", "package__name", "converted_content__description").extra(
+    #            select={
+    #                "desc_snippet": f"ts_headline('english', COALESCE({content_table}.description, ''), plainto_tsquery(%s))",
+    #                "rank": f"ts_rank(to_tsvector('english', COALESCE({content_table}.description, '')), plainto_tsquery(%s), 32)",
+    #            },
+    #            where=[f"to_tsvector('english', COALESCE({content_table}.description, '')) @@ plainto_tsquery(%s)"],
+    #            params=[term],
+    #            select_params=[term, term],
+    #            order_by=("-rank", "name", "section", "lang", "package__name", "package__repo"),
+    #        )
+    #
+    # 2. A mostly equivalent query in pure Django ORM syntax (better parametrization, still no subquery, same performance):
+    #    from django.db.models import F
+    #    apropos_results = ManPage.objects.values("name", "section", "lang", "package__repo", "package__name", "converted_content__description") \
+    #                                 .annotate(description=F("converted_content__description")) \
+    #                                 .annotate(desc_snippet=ts_headline) \
+    #                                 .annotate(rank=ts_rank) \
+    #                                 .annotate(search=ts_vector) \
+    #                                 .filter(search=ts_query) \
+    #                                 .order_by("-rank", "name", "section", "lang", "package__name", "package__repo")
+    # 3. We can define the subquery like this, but the real question is how to use it:
+    #    content_results = Content.objects.only("id") \
+    #                                 .annotate(desc_snippet=ts_headline) \
+    #                                 .annotate(rank=ts_rank) \
+    #                                 .annotate(search=ts_vector) \
+    #                                 .filter(search=ts_query)
+    #    Also note that we can't use the subquery even in the plain-text for a raw SQL query,
+    #    because the ".query" attribute strips '' from the COALESCE function. [WTF!!!]
+    # 3a) Django supports subqueries like this: https://docs.djangoproject.com/en/3.1/ref/models/expressions/#subquery-expressions
+    #           SELECT "post"."id", (
+    #               SELECT U0."email"
+    #               FROM "comment" U0
+    #               WHERE U0."post_id" = ("post"."id")
+    #               ORDER BY U0."created_at" DESC LIMIT 1
+    #           ) AS "newest_commenter_email" FROM "post"
+    #    But this is not applicable here, because the subquery *must* return exactly one column
+    #    (otherwise it is an SQL syntax error). Anyway, the code (which does not work) would
+    #    be more or less like this:
+    #       from django.db.models import OuterRef, Subquery
+    #       content_results = Content.objects.only("id") \
+    #                                    .annotate(desc_snippet=ts_headline) \
+    #                                    .annotate(rank=ts_rank) \
+    #                                    .annotate(search=ts_vector) \
+    #                                    .filter(Q(search=ts_query) & Q(id=OuterRef("converted_content_id")))    # this is basically the join condition
+    #       apropos_results = ManPage.objects.values("name", "section", "lang", "package__repo", "package__name") \
+    #                                    .annotate(content_subquery=Subquery(content_results)) \
+    #                                    .order_by("-rank", "name", "section", "lang", "package__name", "package__repo")
+    # 3b) Django supports joins with simple subqueries via FilteredRelation objects, but it
+    #     does not work with arbitrary subqueries, especially subqueries which add additional
+    #     columns (like our "desc_snippet" and "rank").
+    #     https://docs.djangoproject.com/en/3.1/ref/models/querysets/#filteredrelation-objects
+
+    # Note: the "Q" objects allow more complicated expressions in the filter:
+    # https://docs.djangoproject.com/en/3.1/topics/db/queries/#complex-lookups-with-q
+    pkg_results = Package.objects.only("repo", "name") \
+                                 .annotate(desc_snippet=ts_headline) \
+                                 .annotate(rank=ts_sim_rank) \
+                                 .annotate(search=ts_vector) \
+                                 .filter(Q(name__trigram_similar=term) | Q(search=ts_query)) \
+                                 .order_by("-rank", "name", "repo")
+
+    man_results = paginate(request, "page_man", man_results, 20)
+    apropos_results = paginate(request, "page_apropos", apropos_results, 20)
     pkg_results = paginate(request, "page_pkg", pkg_results, 20)
 
     context = {
         "man_results": man_results,
+        "apropos_results": apropos_results,
         "pkg_results": pkg_results,
     }
 
