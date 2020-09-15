@@ -320,7 +320,10 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
 # - https://www.postgresql.org/docs/current/static/functions-textsearch.html
 # - https://www.postgresql.org/docs/current/static/textsearch-controls.html#textsearch-headline
 def search(request):
-    term = request.GET["q"]
+    term = request.GET.get("q")
+    # skip search queries with an empty term (they take a long time, PostgreSQL cannot use the index)
+    if not term:
+        return render(request, "search.html")
 
     man_filter = {}
 

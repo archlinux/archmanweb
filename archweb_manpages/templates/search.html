@@ -12,6 +12,7 @@
 {% block content %}
 <article>
 
+{% if request.GET.q %}
 <section class="search-results">
     <h2>Results for <em>{{ request.GET.q }}</em> in manual names</h2>
     <ol start="{{ man_results.start_index }}">
@@ -74,6 +75,7 @@
         {% pagination_links request pkg_results 'page_pkg' %}
     {% endif %}
 </section>
+{% endif %}
 
 </article>
 {% endblock %}
