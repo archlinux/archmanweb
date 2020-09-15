@@ -7,9 +7,10 @@
 
 <p>
     This website was created for the <a href="https://wiki.archlinux.org/index.php/Template:Man">man template</a>
-    on the Arch wiki. Other sites which could be used for linking either don't provide the same manuals as Arch
-    packages, or don't have suitable URL addressing scheme, or have other issues. Therefore we decided to build
-    a new service to meet our requirements:
+    on the Arch wiki. Originally, the template replaced plain text, unclickable references to man pages with links
+    to <a href="https://man7.org/linux/man-pages/">man7.org</a>, which contains a handful of manuals taken directly
+    from upstream. Later, we considered switching to another site providing more manuals. Since we did not find
+    a suitable external site, we decided to build a new service to satisfy all our requirements:
 </p>
 <ol>
     <li>All man pages from official Arch packages are available. Old versions and permalinks are not necessary.</li>
@@ -47,6 +48,8 @@
     <li>Listings with custom filters and orderings.</li>
     <li>Links to other versions of the same manual provided by different packages.</li>
     <li>Links to similar manuals available in other sections or languages.</li>
+    <li>Searching in the names and descriptions of packages and manuals, similarly to
+        <a href="{% url 'index' %}man/apropos.1">apropos(1)</a>.
 </ul>
 
 <h3>Similar projects</h3>
