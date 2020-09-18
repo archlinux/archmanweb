@@ -276,7 +276,7 @@ class ManPage(models.Model):
 
             if output_type == "txt":
                 # update plain-text description
-                description = extract_description(content)
+                description = extract_description(content, self.lang)
                 Content.objects.filter(id=self.converted_content_id).update(description=description)
 
         return content

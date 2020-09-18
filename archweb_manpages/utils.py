@@ -103,12 +103,62 @@ def extract_headings(html):
         result.append(dict(id=id, title=title))
     return result
 
-def extract_description(text):
-    desc_gen = re.finditer(r"(?<=^NAME$)(?P<description>.+?)(?=^\S)", text, flags=re.MULTILINE | re.DOTALL)
-    try:
-        description = next(desc_gen).group("description")
-    except StopIteration:
+def extract_description(text, lang="en"):
+    """
+    Extracts the "description" from a plain-text version of a manual page.
+
+    The description is taken from the NAME section (or a hard-coded list of
+    translations for non-English manuals). At most 2 paragraphs, one of which
+    is usually the one-line description of the manual, are taken to keep the
+    description short.
+
+    Note that NAME does not have to be the first section, see e.g. syslog.h(0P).
+    """
+    dictionary = {
+        "ar": "الاسم",
+        "bn": "নাম",
+        "ca": "NOM",
+        "cs": "JMÉNO|NÁZEV",
+        "da": "NAVN",
+        "de": "BEZEICHNUNG",
+        "el": "ΌΝΟΜΑ",
+        "eo": "NOMO",
+        "es": "NOMBRE",
+        "et": "NIMI",
+        "fi": "NIMI",
+        "fr": "NOM",
+        "gl": "NOME",
+        "hr": "IME",
+        "hu": "NÉV",
+        "id": "NAMA",
+        "it": "NOME",
+        "ja": "名前",
+        "ko": "이름",
+        "lt": "PAVADINIMAS",
+        "nb": "NAVN",
+        "nl": "NAAM",
+        "pl": "NAZWA",
+        "pt": "NOME",
+        "ro": "NUME",
+        "ru": "ИМЯ|НАЗВАНИЕ",
+        "sk": "NÁZOV",
+        "sl": "IME",
+        "sr": "НАЗИВ|ИМЕ|IME",
+        "sv": "NAMN",
+        "ta": "பெயர்",
+        "tr": "İSİM|AD",
+        "uk": "НАЗВА|НОМИ|NOMI",
+        "vi": "TÊN",
+        "zh": "名称|名字|名称|名稱",
+    }
+    lang = lang.split("_")[0].split("@")[0]
+    name = dictionary.get(lang, "NAME")
+    if name != "NAME":
+        name = "NAME|" + name
+    match = re.search(rf"(^{name}$)(?P<description>.+?)(?=^\S)", text, flags=re.MULTILINE | re.DOTALL | re.IGNORECASE)
+    if match is None:
         return None
+    description = match.group("description")
     description = textwrap.dedent(description.strip("\n"))
     # keep max 2 paragraphs separated by a blank line
     # (some pages contain a lot of text in the NAME section, e.g. owncloud(1) or qwtlicense(3))
