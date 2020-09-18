@@ -33,11 +33,29 @@
     padding: 0px;
 }
 
-/* override top margin for paragraphs (needs to be the same as bottom margin,
- * because mandoc creates <section> tags with the first paragraph outside <p>
+/* Override top margin for paragraphs (needs to be the same as bottom margin,
+ * because mandoc creates elements with text of the first paragraph outside <p>.
+ * The value 0.6em is consistent with the margins assigned to markup elements
+ * such as ".Bl-tag > dd".
  */
 .man-page-content p {
-    margin: 1em 0;
+    margin: 0.6em 0;
+}
+/* Override top margin of first children in elements for which mandoc sets zero
+ * margin (cannot be done everywhere because of the note above).
+ */
+.Bl-compact > li > :first-child,
+.Bl-tag > dt > :first-child,
+.Bl-tag > dd > :first-child,
+.Bl-compact > dd > :first-child,
+.Bl-compact > dt > :first-child,
+.Bl-compact > tbody > tr > td > :first-child
+{
+    margin-top: 0em;
+}
+/* Override bottom margin of all last children. */
+.man-page-content :last-child {
+    margin-bottom: 0em;
 }
 
 
@@ -75,11 +93,15 @@
  * - applied to the "tbl" class
  * - removed "white-space: nowrap"
  * - "th" style applied also to "td" in the first row
+ * - top and bottom margins set to 1em for consistency with other markup elements
+ *   (they have to be the same because mandoc creates elements with text of the
+ *   first paragraph outside <p>)
  */
 .man-page-content table.tbl {
     background: #ecf2f5 none repeat scroll 0 0;
     border: 1px solid #bcd;
-    margin-bottom: 1.5em;
+    margin-top: 0.6em;
+    margin-bottom: 0.6em;
     padding: 0.65em;
     font-size: 1.00em;
     border-collapse: collapse;
@@ -200,7 +222,8 @@ h2.Ss {         margin-top: 1.2em;
 .Bd-indent {    margin-left: 3.8em; }
 /* cancel useless indentation of pre tags (leave visual left margin of 1em) */
 .Bd-indent > pre:only-child {
-                margin-left: -2.8em; }
+                margin-left: -2.8em;
+                margin-top: 0em; }
 /* cancel useless double-indent */
 .Bd-indent > .Bd-indent:only-child {
                 margin-left: 0em; }
