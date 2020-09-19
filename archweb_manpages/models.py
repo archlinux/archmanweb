@@ -1,5 +1,4 @@
 import re
-import subprocess
 from pathlib import PurePath
 
 from django.db import models
@@ -7,7 +6,7 @@ from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 
-from .utils import reverse_man_url, postprocess, extract_description
+from .utils import reverse_man_url, mandoc_convert, postprocess, extract_description
 
 # django does not support functional indexes (indexes on expressions) out of the box,
 # otherwise we could use just this:
@@ -250,17 +249,6 @@ class ManPage(models.Model):
         content = re.sub(r"^\.so (?P<target>[A-Za-z0-9@._+\-:\[\]\/]+)\s*$", repl, content, flags=re.MULTILINE)
         return content
 
-    @staticmethod
-    def _convert(content, output_type, lang=None):
-        if output_type == "html":
-            url_pattern = reverse_man_url("", "", "%N", "%S", lang, "")
-            cmd = "mandoc -T html -O fragment,man={}".format(url_pattern)
-        elif output_type == "txt":
-            cmd = "mandoc -T utf8"
-        p = subprocess.run(cmd, shell=True, check=True, input=content, encoding="utf-8", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        assert p.stdout
-        return p.stdout
-
     def get_converted(self, output_type):
         assert output_type in {"html", "txt"}
 
@@ -270,7 +258,7 @@ class ManPage(models.Model):
         content = self.get_content(output_type)
         if content is None:
             content = self.get_preprocessed_content()
-            content = self._convert(content, output_type, self.lang)
+            content = mandoc_convert(content, output_type, self.lang)
             content = postprocess(content, output_type, self.lang)
             self.set_content(output_type, content)
 

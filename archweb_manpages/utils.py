@@ -1,3 +1,4 @@
+import subprocess
 import re
 import textwrap
 
@@ -32,6 +33,16 @@ def paginate(request, url_param, query, limit):
         # If page is out of range, deliver the last page.
         query = paginator.page(paginator.num_pages)
     return query
+
+def mandoc_convert(content, output_type, lang=None):
+    if output_type == "html":
+        url_pattern = reverse_man_url("", "", "%N", "%S", lang, "")
+        cmd = "mandoc -T html -O fragment,man={}".format(url_pattern)
+    elif output_type == "txt":
+        cmd = "mandoc -T utf8"
+    p = subprocess.run(cmd, shell=True, check=True, input=content, encoding="utf-8", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    assert p.stdout
+    return p.stdout
 
 def postprocess(text, content_type, lang):
     assert content_type in {"html", "txt"}
