@@ -60,9 +60,9 @@ def build_apropos_filter(q):
         column, operation = key.rsplit("__", maxsplit=1)
         if column.startswith("package__"):
             column = column.split("__", maxsplit=1)[1]
-            column = f"\"{package_table}\".\"{column}\""
+            column = f"\"{Package.objects.model._meta.db_table}\".\"{column}\""
         else:
-            column = f"\"{manpage_table}\".\"{column}\""
+            column = f"\"{ManPage.objects.model._meta.db_table}\".\"{column}\""
         # select the correct operator
         if operation == "exact":
             op = "= %s::text"
