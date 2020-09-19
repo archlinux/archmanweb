@@ -33,17 +33,29 @@ class SearchForm(forms.Form):
         manpage_distinct_lang = cache.get_or_set("ManPage:lang:distinct", ManPage.objects.values_list("lang", flat=True).distinct("lang").order_by("lang"), timeout=600)
         package_distinct_repo = cache.get_or_set("Package:repo:distinct", Package.objects.values_list("repo", flat=True).distinct("repo").order_by("repo"), timeout=600)
 
+        section_descriptions = {
+            "1": "1 - General commands",
+            "2": "2 - System calls",
+            "3": "3 - Library functions",
+            "4": "4 - Device files",
+            "5": "5 - File formats",
+            "6": "6 - Games",
+            "7": "7 - Miscellaneous",
+            "8": "8 - Privileged commands",
+            "9": "9 - Kernel internals",
+        }
+
         # django does not support dynamic assignments into the field instances,
         # so the whole fields have to be recreated from scratch
         self.fields["section"] = forms.MultipleChoiceField(
                     label="Section",
-                    help_text="Limit search results to a specific section of manuals",
-                    choices=[(r, r) for r in manpage_distinct_section],
+                    help_text="Limit search results to a specific manual section or subsection",
+                    choices=[(r, section_descriptions.get(r, r)) for r in manpage_distinct_section],
                     required=False,
                 )
         self.fields["lang"] = forms.MultipleChoiceField(
                     label="Language",
-                    help_text="Limit search results to a specific language of manuals",
+                    help_text="Limit search results to a specific language",
                     choices=[(r, r) for r in manpage_distinct_lang],
                     required=False,
                 )
