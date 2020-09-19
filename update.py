@@ -354,7 +354,7 @@ if __name__ == "__main__":
     if args.keep_tarballs is False:
         finder.clear_pkgcache()
 
-    # update remaining plain-text which convert_txt could not handle
+    # convert manual pages to plain-text
     # (one transaction per update, otherwise we might hit memory allocation error)
     def worker(man_id):
         man = ManPage.objects.get(id=man_id)
