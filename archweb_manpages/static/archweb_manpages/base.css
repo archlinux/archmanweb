@@ -100,16 +100,79 @@ nav {
     margin-bottom: 1em;
 }
 
+/* forms and input styling */
+form p {
+    margin: 0.5em 0;
+}
+
+form ul.errorlist {
+    color: red;
+    margin: 0.5em 0;
+}
+
+fieldset {
+    border: 0;
+}
+
+label {
+    vertical-align: top;
+    display: inline-block;
+}
+
 input {
     vertical-align: middle;
 }
 
+input[type=text],
 input[type=search] {
     padding: 0.10em;
 }
 
 input[type=submit] {
     padding: 0.1em 0.6em;
+}
+
+select[multiple] {
+    padding: 1px 0;
+}
+
+select[multiple] option {
+    padding: 0 0.5em 0 0.3em;
+}
+
+/* search filter parameters */
+.search-parameters {
+    margin-bottom: 1em;
+}
+
+.search-parameters h3 {
+    font-size: 1em;
+    margin-top: 0;
+}
+
+.search-parameters div.flex-container {
+    display: flex;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    /* compensate for the margin-bottom of the flex-container items */
+    margin-bottom: -0.85em;
+}
+
+.search-parameters .flex-container div {
+    margin-bottom: 1em;
+    font-size: 0.85em;
+}
+
+.search-parameters .flex-container div:not(:last-child) {
+    margin-right: 1.65em;
+}
+
+.search-parameters legend {
+    display: none;
+}
+
+.search-parameters label {
+    display: block;
 }
 
 /* scale fonts down to a sane default (16 * .875 = 14px) */
@@ -200,6 +263,13 @@ main#content {
     #sidebar {
         margin: 0 0 1rem;
     }
+}
+
+.box {
+    margin-bottom: 1.5em;
+    padding: 0.65em;
+    background: #ecf2f5;
+    border: 1px solid #bcd;
 }
 
 /* package info definition list */

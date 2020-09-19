@@ -12,9 +12,36 @@
 {% block content %}
 <article>
 
-{% if request.GET.q %}
+<section class="search-parameters box">
+    <h2>Manual page search parameters</h2>
+
+    <form action="{% url 'search' %}" class="search" role="search">
+        {{ search_form.non_field_errors }}
+        <fieldset>
+            <legend>Enter search parameters</legend>
+            {# fieldset cannot be a flex container: https://stackoverflow.com/q/28078681 #}
+            <div class="flex-container">
+            {% for field in search_form %}
+            <div>
+                <label for="{{ field.id_for_label }}" title="{{ field.help_text }}">
+                    {{ field.label }}
+                </label>
+                {{ field }}
+                {{ field.errors }}
+            </div>
+            {% endfor %}
+            <div>
+                <label>&nbsp;</label>
+                <input title="Search for manuals using these criteria" type="submit" value="Search" />
+            </div>
+            </div>
+        </fieldset>
+    </form>
+</section>
+
+{% if request.GET.q and search_form.is_valid %}
 <section class="search-results">
-    <h2>Results for <em>{{ request.GET.q }}</em> in manual names</h2>
+    <h2>Results in manual names</h2>
     <ol start="{{ man_results.start_index }}">
     {% for man in man_results %}
         <li>
@@ -33,7 +60,7 @@
 </section>
 
 <section class="search-results">
-    <h2>Results for <em>{{ request.GET.q }}</em> in manual descriptions ("apropos")</h2>
+    <h2>Results in manual descriptions ("apropos")</h2>
     <ol start="{{ apropos_results.start_index }}">
     {% for man in apropos_results %}
         <li>
@@ -57,7 +84,7 @@
 </section>
 
 <section class="search-results">
-    <h2>Results for <em>{{ request.GET.q }}</em> in package names and descriptions</h2>
+    <h2>Results in package names and descriptions</h2>
     <ol start="{{ pkg_results.start_index }}">
     {% for pkg in pkg_results %}
         <li>

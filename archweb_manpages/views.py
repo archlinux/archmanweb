@@ -1,3 +1,7 @@
+import copy
+import operator
+from functools import reduce
+
 from django.shortcuts import render
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.db.models import Count, Q
@@ -5,6 +9,7 @@ from django.contrib.postgres.search import TrigramSimilarity, SearchQuery, Searc
 
 from .models import Package, Content, ManPage, SymbolicLink, UpdateLog, SoelimError
 from .utils import reverse_man_url, paginate, extract_headings
+from .forms import SearchForm
 
 def index(request):
     count_man_pages = ManPage.objects.count()
@@ -314,27 +319,104 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
 
     return render(request, "man_page.html", context)
 
+def build_apropos_filter(q):
+    def build_condition(key, value):
+        # parse the Django syntax (hardcoded for current models)
+        column, operation = key.rsplit("__", maxsplit=1)
+        if column.startswith("package__"):
+            column = column.split("__", maxsplit=1)[1]
+            column = f"\"{package_table}\".\"{column}\""
+        else:
+            column = f"\"{manpage_table}\".\"{column}\""
+        # select the correct operator
+        if operation == "exact":
+            op = "= %s::text"
+        elif operation == "iexact":
+            op = "= lower(%s::text)"
+            column = f"lower({column})"
+        elif operation == "in":
+            op = "IN ({})".format(", ".join(["%s::text"] * len(value)))
+        elif operation == "startswith":
+            op = "~~ %s::text"
+            value += "%"
+        else:
+            raise NotImplementedError(f"Operation {operation} is not implemented for the apropos search.")
+        # build the filter condition
+        condition = f"{column} {op}"
+        return condition, value
+
+    conditions = []
+    values = []
+    for i in range(len(q.children)):
+        if isinstance(q.children[i], Q):
+            c, v = build_apropos_filter(q.children[i])
+            conditions.append(c)
+            values += v
+            continue
+        key, value = q.children[i]
+        condition, value = build_condition(key, value)
+        conditions.append(condition)
+        if isinstance(value, list):
+            values += value
+        else:
+            values.append(value)
+
+    condition = f" {q.connector} ".join("({})".format(c) for c in conditions)
+    return condition, values
+
 # References:
 # - https://www.postgresql.org/docs/current/static/pgtrgm.html
 # - https://www.postgresql.org/docs/current/static/textsearch.html
 # - https://www.postgresql.org/docs/current/static/functions-textsearch.html
 # - https://www.postgresql.org/docs/current/static/textsearch-controls.html#textsearch-headline
 def search(request):
-    term = request.GET.get("q")
-    # skip search queries with an empty term (they take a long time, PostgreSQL cannot use the index)
-    if not term:
-        return render(request, "search.html")
+    search_form = SearchForm(request.GET)
+    if not search_form.is_valid():
+        return render(request, "search.html", {"search_form": search_form})
 
-    man_filter = {}
+    term = search_form.cleaned_data["q"]
+    filter_section = search_form.cleaned_data["section"]
+    filter_lang = search_form.cleaned_data["lang"]
+    filter_repo = search_form.cleaned_data["repo"]
+    filter_pkgname = search_form.cleaned_data["pkgname"]
 
-    if "lang" in request.GET:
-        man_filter["lang__iexact"] = request.GET["lang"]
+    man_filter = Q()
+    pkg_filter = Q()
+
+    if filter_section:
+        assert isinstance(filter_section, list)
+        man_filter &= reduce(operator.__or__,
+                             (Q(section__startswith=q) for q in filter_section))
+    if filter_lang:
+        assert isinstance(filter_lang, list)
+        man_filter &= reduce(operator.__or__,
+                             (Q(lang__startswith=q) for q in filter_lang))
+    if filter_repo:
+        assert isinstance(filter_repo, list)
+        man_filter &= Q(package__repo__in=filter_repo)
+        pkg_filter &= Q(repo__in=filter_repo)
+    if filter_pkgname:
+        man_filter &= Q(package__name__iexact=filter_pkgname)
+        pkg_filter &= Q(name__iexact=filter_pkgname)
+
+    # this is only because we cannot use .annotate() inside the union (Django would add another column)
+    symlink_filter = copy.deepcopy(man_filter)
+    def build_symlink_filter(q):
+        for i in range(len(q.children)):
+            if isinstance(q.children[i], Q):
+                build_symlink_filter(q.children[i])
+                continue
+            key, value = q.children[i]
+            if key.startswith("section__"):
+                key = "from_" + key
+            q.children[i] = (key, value)
+    build_symlink_filter(symlink_filter)
 
     man_results = ManPage.objects.values("name", "section", "lang", "package__repo", "package__name") \
-                                 .filter(name__trigram_similar=term, **man_filter) \
+                                 .filter(name__trigram_similar=term).filter(man_filter) \
                                  .annotate(similarity=TrigramSimilarity("name", term)) \
            .union(SymbolicLink.objects.values("from_name", "from_section", "lang", "package__repo", "package__name")
-                                      .filter(from_name__trigram_similar=term, **man_filter)
+                                      .filter(from_name__trigram_similar=term).filter(symlink_filter)
                                       .annotate(similarity=TrigramSimilarity("from_name", term)),
                   all=True) \
            .order_by("-similarity", "name", "section", "lang")
@@ -346,6 +428,18 @@ def search(request):
     #ts_rank = SearchRank(ts_vector, ts_query, normalization=32)
     ts_sim_rank = TrigramSimilarity("name", term) + 2 * SearchRank(ts_vector, ts_query, normalization=32)
 
+    # get table names for the models (needed for raw SQL)
+    package_table = Package.objects.model._meta.db_table
+    content_table = Content.objects.model._meta.db_table
+    manpage_table = ManPage.objects.model._meta.db_table
+
+    # build the WHERE clause (ugh)
+    apropos_filter_conditions, apropos_filter_values = build_apropos_filter(man_filter)
+    if apropos_filter_conditions:
+        apropos_filter = f"WHERE {apropos_filter_conditions}"
+    else:
+        apropos_filter = ""
+
     # For the search in man page descriptions ("apropos") we need to perform a raw SQL query,
     # because it is not possible to express the same query with Django ORM.
     # Notes:
@@ -354,9 +448,6 @@ def search(request):
     #   will not use the GIN index
     # - WITH is used for convenience to avoid repeating the ts_rank expression in the WHERE clause
     #   https://www.postgresql.org/docs/current/queries-with.html
-    package_table = Package.objects.model._meta.db_table
-    content_table = Content.objects.model._meta.db_table
-    manpage_table = ManPage.objects.model._meta.db_table
     content_results = f"""
             WITH content_search AS (
                 SELECT "{content_table}"."id",
@@ -378,8 +469,9 @@ def search(request):
                    "rank"
             FROM "{manpage_table}" INNER JOIN "{package_table}" ON ("{manpage_table}"."package_id" = "{package_table}"."id")
                 INNER JOIN ({content_results}) AS subquery ON ("{manpage_table}"."converted_content_id" = "subquery"."id")
+            {apropos_filter}
             ORDER BY "rank" DESC, "{manpage_table}"."name" ASC, "{manpage_table}"."section" ASC, "{manpage_table}"."lang" ASC, "package__name" ASC, "package__repo" ASC""",
-            [term, term, term])
+            [term, term, term] + apropos_filter_values)
     # NOTE: Some other things that were tried with Django ORM (as of Django 3.1):
     # 1. We could do this if we did not need a subquery (this works, but is slow):
     #    apropos_results = ManPage.objects.values("name", "section", "lang", "package__repo", "package__name", "converted_content__description").extra(
@@ -440,6 +532,7 @@ def search(request):
                                  .annotate(desc_snippet=ts_headline) \
                                  .annotate(rank=ts_sim_rank) \
                                  .annotate(search=ts_vector) \
+                                 .filter(pkg_filter) \
                                  .filter(Q(name__trigram_similar=term) | Q(search=ts_query)) \
                                  .order_by("-rank", "name", "repo")
 
@@ -448,6 +541,7 @@ def search(request):
     pkg_results = paginate(request, "page_pkg", pkg_results, 20)
 
     context = {
+        "search_form": search_form,
         "man_results": man_results,
         "apropos_results": apropos_results,
         "pkg_results": pkg_results,
