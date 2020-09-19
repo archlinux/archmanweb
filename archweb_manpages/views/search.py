@@ -132,8 +132,14 @@ def search(request):
 
     if filter_section:
         assert isinstance(filter_section, list)
-        man_filter &= reduce(operator.__or__,
-                             (Q(section__startswith=q) for q in filter_section))
+        section_parts = []
+        for q in filter_section:
+            # do prefix search only when given a single letter (e.g. "3p" should not match "3perl", "3python" etc.)
+            if len(q) == 1:
+                section_parts.append(Q(section__startswith=q))
+            else:
+                section_parts.append(Q(section__iexact=q))
+        man_filter &= reduce(operator.__or__, section_parts)
     if filter_lang:
         assert isinstance(filter_lang, list)
         man_filter &= reduce(operator.__or__,
