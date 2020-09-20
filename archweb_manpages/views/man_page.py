@@ -1,3 +1,6 @@
+import functools
+import pyalpm
+
 from django.shortcuts import render
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 
@@ -73,18 +76,61 @@ def _parse_man_name_section_lang(url_snippet, *, force_lang=None):
         # name.with.dots
         return url_snippet, None, None
 
+def _get_best_match(query, section="section"):
+    # prefetch the package object so that we don't hit the db repeatedly while sorting
+    # (we can fetch all matches and do the sorting in Python since there are not many
+    # ambiguous cases)
+    queryset = query.select_related("package").all()
+    if len(queryset) == 0:
+        return None
+
+    def get_section_key(section):
+        # section sorting:
+        #   - based on mandoc: 1, 8, 6, 2, 3, 5, 7, 4, 9, 3p
+        #   - based on man-db: 1, n, l, 8, 3, 0, 2, 5, 4, 9, 6, 7
+        order = ("1", "n", "l", "8", "6", "3", "0", "2", "5", "7", "4", "9")
+        # sections in the list are ordered first
+        if section in order:
+            return (order.index(section), "")
+        # sections which start with a letter in the list are sorted next
+        # (following the same ordering of the first letter and lexical ordering of the rest)
+        if section[0] in order:
+            return (order.index(section[0]) + len(order), section[1:])
+        # other sections are ordered last (respecting the lexical order wrt each other)
+        return (100, section)
+
+    def get_repo_key(repo):
+        order = ("core", "extra", "community", "multilib", "testing", "community-testing", "multilib-testing")
+        if repo in order:
+            return (order.index(repo), "")
+        return (len(order), repo)
+
+    def get_pkgver_key(version):
+        # arguments of vercmp are swapped to order the highest version first
+        key_getter = functools.cmp_to_key(lambda a, b: pyalpm.vercmp(b, a))
+        return key_getter(version)
+
+    # sorting for best match:
+    #   - section (based on above)
+    #   - repo (based on above)
+    #   - package version (based on vercmp)
+    def sort_key(man):
+        sec_key = get_section_key(getattr(man, section))
+        repo_key = get_repo_key(man.package.repo)
+        pkgver_key = get_pkgver_key(man.package.version)
+        return (sec_key, repo_key, pkgver_key)
+
+    queryset = sorted(queryset, key=sort_key)
+    return queryset[0]
+
 def try_redirect_or_404(request, repo, pkgname, man_name, man_section, lang, output_type, name_section_lang):
     if man_section is None:
         query = SymbolicLink.objects.filter(from_name=man_name, lang=lang, **_get_package_filter(repo, pkgname))
-        # TODO: we're trying to guess the newest version, but lexical ordering is too weak
-        query = query.order_by("from_section", "-package__version")[:1]
     else:
         query = SymbolicLink.objects.filter(from_section=man_section, from_name=man_name, lang=lang, **_get_package_filter(repo, pkgname))
-        # TODO: we're trying to guess the newest version, but lexical ordering is too weak
-        query = query.order_by("-package__version")[:1]
+    symlink = _get_best_match(query, "from_section")
 
-    if len(query) > 0:
-        symlink = query[0]
+    if symlink is not None:
         # repo and pkgname are not added, the target might be in a different package
         url = reverse_man_url("", "", symlink.to_name, symlink.to_section, symlink.lang, output_type)
         return HttpResponseRedirect(url)
@@ -92,7 +138,6 @@ def try_redirect_or_404(request, repo, pkgname, man_name, man_section, lang, out
     # Try the default language before giving 404.
     # This is important because we don't know if the user explicitly specified
     # the language or followed a link to a localized page, which does not exist.
-    # TODO: we could parse the referer header and redirect only links coming from this site
     #
     # Note: if page "foo" does not exist in language "bar", we'll get "foo.bar" as the
     # man_name, so we need to re-parse the URL and force the default language.
@@ -129,17 +174,13 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
     # find the man page and package containing it
     if man_section is None:
         query = ManPage.objects.filter(name=man_name, lang=lang, **_get_package_filter(repo, pkgname))
-        # TODO: we're trying to guess the newest version, but lexical ordering is too weak
-        query = query.order_by("section", "-package__version")[:1]
     else:
         query = ManPage.objects.filter(section=man_section, name=man_name, lang=lang, **_get_package_filter(repo, pkgname))
-        # TODO: we're trying to guess the newest version, but lexical ordering is too weak
-        query = query.order_by("-package__version")[:1]
+    db_man = _get_best_match(query)
 
-    if len(query) == 0:
+    if db_man is None:
         return try_redirect_or_404(request, repo, pkgname, man_name, man_section, lang, url_output_type, name_section_lang)
     else:
-        db_man = query[0]
         if man_section is None:
             return HttpResponseRedirect(reverse_man_url(repo, pkgname, man_name, db_man.section, url_lang, url_output_type))
         db_pkg = db_man.package
