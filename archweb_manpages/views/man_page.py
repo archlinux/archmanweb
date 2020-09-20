@@ -19,8 +19,8 @@ def _get_package_filter(repo, pkgname):
 # but this seems enough to parse the URL correctly. debiman actually only checks
 # if given section/lang is in some static set.
 def _exists_name_section(name, section):
-    return ManPage.objects.filter(name=name, section=section).exists() or \
-           SymbolicLink.objects.filter(from_name=name, from_section=section).exists()
+    return ManPage.objects.filter(name=name, section__startswith=section).exists() or \
+           SymbolicLink.objects.filter(from_name=name, from_section__startswith=section).exists()
 
 def _exists_language(lang):
     # cross-language symlinks are not allowed
@@ -31,8 +31,8 @@ def _exists_name_language(name, lang):
     return ManPage.objects.filter(name=name, lang=lang).exists()
 
 def _exists_name_section_language(name, section, lang):
-    return ManPage.objects.filter(name=name, section=section, lang=lang).exists() or \
-           SymbolicLink.objects.filter(from_name=name, from_section=section, lang=lang).exists()
+    return ManPage.objects.filter(name=name, section__startswith=section, lang=lang).exists() or \
+           SymbolicLink.objects.filter(from_name=name, from_section__startswith=section, lang=lang).exists()
 
 def _parse_man_name_section_lang(url_snippet, *, force_lang=None):
     # Man page names can contain dots, so we need to parse from the right. There are still
@@ -127,7 +127,7 @@ def try_redirect_or_404(request, repo, pkgname, man_name, man_section, lang, out
     if man_section is None:
         query = SymbolicLink.objects.filter(from_name=man_name, lang=lang, **_get_package_filter(repo, pkgname))
     else:
-        query = SymbolicLink.objects.filter(from_section=man_section, from_name=man_name, lang=lang, **_get_package_filter(repo, pkgname))
+        query = SymbolicLink.objects.filter(from_section__startswith=man_section, from_name=man_name, lang=lang, **_get_package_filter(repo, pkgname))
     symlink = _get_best_match(query, "from_section")
 
     if symlink is not None:
@@ -175,15 +175,15 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
     if man_section is None:
         query = ManPage.objects.filter(name=man_name, lang=lang, **_get_package_filter(repo, pkgname))
     else:
-        query = ManPage.objects.filter(section=man_section, name=man_name, lang=lang, **_get_package_filter(repo, pkgname))
+        query = ManPage.objects.filter(section__startswith=man_section, name=man_name, lang=lang, **_get_package_filter(repo, pkgname))
     db_man = _get_best_match(query)
 
     if db_man is None:
         return try_redirect_or_404(request, repo, pkgname, man_name, man_section, lang, url_output_type, name_section_lang)
-    else:
-        if man_section is None:
-            return HttpResponseRedirect(reverse_man_url(repo, pkgname, man_name, db_man.section, url_lang, url_output_type))
-        db_pkg = db_man.package
+    # redirect if man_section is None or just a prefix
+    if man_section != db_man.section:
+        return HttpResponseRedirect(reverse_man_url(repo, pkgname, man_name, db_man.section, url_lang, url_output_type))
+    db_pkg = db_man.package
 
     if serve_output_type == "raw":
         return HttpResponse(db_man.content.raw, content_type="text/plain; charset=utf8")
