@@ -9,7 +9,7 @@
 
 <h2>Test cases</h2>
 
-These links serve as test cases to ensure that all features still work, they are not useful to regular users.
+<p>These links serve as test cases to ensure that all features still work, they are not useful to regular users.</p>
 
 <h3>URLs with dots</h3>
 <ul class="multi-column" style="columns: 4;">
@@ -29,6 +29,19 @@ These links serve as test cases to ensure that all features still work, they are
     <li><a href="{% url 'index' %}man/CA.pl.1ssl">CA.pl.1ssl</a></li>
     <li><a href="{% url 'index' %}man/CA.pl.1ssl.en">CA.pl.1ssl.en</a></li>
     <li><a href="{% url 'index' %}man/CA.pl.en">CA.pl.en</a></li>
+</ul>
+
+<h3>Best match lookup</h3>
+
+<p>Ambiguous cases are ordered by section, package repository and package version, then the first manual is selected.</p>
+
+<ul>
+    <li><a href="{% url 'index' %}man/mount">mount</a> redirects to <a href="{% url 'index' %}man/mount.8">mount.8</a> (not <a href="{% url 'index' %}man/mount.2">mount.2</a>)</li>
+    <li><a href="{% url 'index' %}man/gv">gv</a> redirects to <a href="{% url 'index' %}man/gv.1">gv.1</a> (not <a href="{% url 'index' %}man/gv.3guile">gv.3guile</a>, <a href="{% url 'index' %}man/gv.3lua">gv.3lua</a> etc.)</li>
+    <li><a href="{% url 'index' %}man/graphviz/gv">graphviz/gv</a> redirects to <a href="{% url 'index' %}man/graphviz/gv.3guile">graphviz/gv.3guile</a> (not <a href="{% url 'index' %}man/graphviz/gv.3lua">graphviz/gv.3lua</a> etc.)</li>
+    <li><a href="{% url 'index' %}man/gv.3">gv.3</a> redirects to <a href="{% url 'index' %}man/gv.3guile">gv.3guile</a> (not <a href="{% url 'index' %}man/gv.1">gv.1</a>, <a href="{% url 'index' %}man/gv.3lua">gv.3lua</a> etc.)</li>
+    <li><a href="{% url 'index' %}man/aliases.5">aliases.5</a> displays <a href="{% url 'index' %}man/extra/postfix/aliases.5">extra/postfix/aliases.5</a> (not <a href="{% url 'index' %}man/community/opensmtpd/aliases.5">community/opensmtpd/aliases.5</a>)</li>
+    <li><a href="{% url 'index' %}man/mysqld.8">mysqld.8</a> displays <a href="{% url 'index' %}man/extra/mariadb/mysqld.8">extra/mariadb/mysqld.8</a> (not <a href="{% url 'index' %}man/community/percona-server/mysqld.8">community/percona-server/mysqld.8</a>)</li>
 </ul>
 
 <h3>Language fallback</h3>
