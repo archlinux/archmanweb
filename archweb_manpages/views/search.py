@@ -172,7 +172,7 @@ def search(request):
                                       .filter(from_name__trigram_similar=term).filter(symlink_filter)
                                       .annotate(similarity=TrigramSimilarity("from_name", term)),
                   all=True) \
-           .order_by("-similarity", "name", "section", "lang")
+           .order_by("-similarity", "name", "section", "lang", "package__name", "package__repo")
 
     # full-text search objects: https://docs.djangoproject.com/en/3.1/ref/contrib/postgres/search/
     ts_query = SearchQuery(term)
