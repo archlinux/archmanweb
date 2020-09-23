@@ -140,17 +140,17 @@ select[multiple] option {
     padding: 0 0.5em 0 0.3em;
 }
 
-/* search filter parameters */
-.search-parameters {
+/* search and listing filter parameters */
+.filter-parameters {
     margin-bottom: 1em;
 }
 
-.search-parameters h3 {
+.filter-parameters h3 {
     font-size: 1em;
     margin-top: 0;
 }
 
-.search-parameters div.flex-container {
+.filter-parameters div.flex-container {
     display: flex;
     justify-content: flex-start;
     flex-wrap: wrap;
@@ -158,20 +158,20 @@ select[multiple] option {
     margin-bottom: -0.85em;
 }
 
-.search-parameters .flex-container div {
+.filter-parameters .flex-container div {
     margin-bottom: 1em;
     font-size: 0.85em;
 }
 
-.search-parameters .flex-container div:not(:last-child) {
+.filter-parameters .flex-container div:not(:last-child) {
     margin-right: 1.65em;
 }
 
-.search-parameters legend {
+.filter-parameters legend {
     display: none;
 }
 
-.search-parameters label {
+.filter-parameters label {
     display: block;
 }
 

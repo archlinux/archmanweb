@@ -49,13 +49,13 @@ class SearchForm(forms.Form):
         # so the whole fields have to be recreated from scratch
         self.fields["section"] = forms.MultipleChoiceField(
                     label="Section",
-                    help_text="Limit search results to a specific manual section or subsection",
+                    help_text="Limit results to a specific manual section or subsection",
                     choices=[(r, section_descriptions.get(r, r)) for r in manpage_distinct_section],
                     required=False,
                 )
         self.fields["lang"] = forms.MultipleChoiceField(
                     label="Language",
-                    help_text="Limit search results to a specific language",
+                    help_text="Limit results to a specific language",
                     choices=[(r, r) for r in manpage_distinct_lang],
                     required=False,
                 )

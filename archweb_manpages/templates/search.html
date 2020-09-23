@@ -12,7 +12,7 @@
 {% block content %}
 <article>
 
-<section class="search-parameters box">
+<section class="filter-parameters box">
     <h2>Manual page search parameters</h2>
 
     <form action="{% url 'search' %}" class="search" role="search">
@@ -47,7 +47,7 @@
         <li>
             <a href="{% reverse_man_url man.package__repo man.package__name man.name man.section man.lang '' %}">{{ man.name }}({{ man.section }})</a>
             [{{ man.lang }}]
-            (from the <a href="{% url 'listing' %}{{ man.package__repo }}/{{ man.package__name }}/">{{ man.package__repo }}/{{ man.package__name }}</a> package)
+            (from the <a href="{% url 'listing' %}/{{ man.package__repo }}/{{ man.package__name }}/">{{ man.package__repo }}/{{ man.package__name }}</a> package)
         </li>
     {% empty %}
         No results.
@@ -68,7 +68,7 @@
                 <dt>
                     <a href="{% reverse_man_url man.package__repo man.package__name man.name man.section man.lang '' %}">{{ man.name }}({{ man.section }})</a>
                     [{{ man.lang }}]
-                    (from the <a href="{% url 'listing' %}{{ man.package__repo }}/{{ man.package__name }}/">{{ man.package__repo }}/{{ man.package__name }}</a> package)
+                    (from the <a href="{% url 'listing' %}/{{ man.package__repo }}/{{ man.package__name }}/">{{ man.package__repo }}/{{ man.package__name }}</a> package)
                 </dt>
                 <dd>{{ man.desc_snippet | safe }}</dd>
             </dl>
@@ -89,7 +89,7 @@
     {% for pkg in pkg_results %}
         <li>
             <dl>
-                <dt><a href="{% url 'listing' %}{{ pkg.repo }}/{{ pkg.name }}/">{{ pkg.repo }}/{{ pkg.name }}</a></dt>
+                <dt><a href="{% url 'listing' %}/{{ pkg.repo }}/{{ pkg.name }}/">{{ pkg.repo }}/{{ pkg.name }}</a></dt>
                 <dd>{{ pkg.desc_snippet | safe }}</dd>
             </dl>
         </li>

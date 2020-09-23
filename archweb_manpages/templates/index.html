@@ -36,23 +36,9 @@ There are several ways to find a specific manual page:
 <ul>
     <li>Use the <a href="{% url 'search' %}">search form</a> to search for keywords in the names and
         descriptions of manual pages and packages.</li>
-    <li>List all manual pages sorted <a href="{% url 'listing' %}">alphabetically</a>,
-        <a href="{% url 'listing' %}?sorting=section">by section</a> or
-        <a href="{% url 'listing' %}?sorting=lang">by language</a>.
-        </li>
-    <li>List English manual pages sorted
-        <a href="{% url 'listing' %}?lang=en&sorting=alphabetical">alphabetically</a> or
-        <a href="{% url 'listing' %}?lang=en&sorting=section">by section</a> (or similarly for any
-        other language).
-        </li>
-    <li>List manual pages in a particular section, e.g.
-        <a href="{% url 'listing' %}?section=1">all pages in section 1</a> or
-        <a href="{% url 'listing' %}?lang=en&section=3">English pages in section 3</a>.
-        </li>
-    <li>List manual pages for a particular package, e.g.
-        <a href="{% url 'listing' %}coreutils/">coreutils</a> or
-        <a href="{% url 'listing' %}core/acl/">core/acl</a>.
-        </li>
+    <li>Use the <a href="{% url 'listing' %}">listing form</a> to list all manual pages matching the
+        specified filtering and sorting criteria.</li>
+    <li>Manually use the addressing scheme as explained below.</li>
 </ul>
 
 <p>
@@ -72,7 +58,7 @@ Any part except <code>&lt;page&gt;</code> is optional:
 </ul>
 Note that symbolic links, such as <a href="{% url 'index' %}man/bunzip2.1">bunzip2(1)</a>, are
 implemented as HTTP redirects with the 302 status code. Symbolic links are included in per-package
-listings, such as <a href="{% url 'listing' %}core/openssl/">core/openssl</a>.
+listings, such as <a href="{% url 'listing' %}/core/openssl/">core/openssl</a>.
 </p>
 
 <section>

@@ -10,24 +10,51 @@
 {% block content %}
 <article class="single-column-content">
 
+<section class="filter-parameters box">
+    <h2>Listing parameters</h2>
+
+    <form action="{% url 'listing' %}" class="listing" role="search">
+        {{ listing_form.non_field_errors }}
+        <fieldset>
+            <legend>Enter listing parameters</legend>
+            {# fieldset cannot be a flex container: https://stackoverflow.com/q/28078681 #}
+            <div class="flex-container">
+            {% for field in listing_form %}
+            <div>
+                <label for="{{ field.id_for_label }}" title="{{ field.help_text }}">
+                    {{ field.label }}
+                </label>
+                {{ field }}
+                {{ field.errors }}
+            </div>
+            {% endfor %}
+            <div>
+                <label>&nbsp;</label>
+                <input title="List manuals satisfying these criteria" type="submit" value="Show" />
+            </div>
+            </div>
+        </fieldset>
+    </form>
+</section>
+
 <section>
-{% if pkg %}
-    <p>The package
-    <a href="https://www.archlinux.org/packages/{{ pkg.repo }}/{{ pkg.arch }}/{{ pkg.name }}/">{{ pkg.repo }}/{{ pkg.name }}</a>
-    contains these man pages:</p>
-{% endif %}
+<h2>List of manual pages</h2>
 
 {% if man_pages %}
     <ul class="multi-column">
     {% for man in man_pages %}
         <li>
             <span class="language-tag">[{{ man.lang }}]</span>
-            <a href="{% reverse_man_url url_repo url_pkgname man.name man.section man.lang '' %}">{{ man.name }}({{ man.section }})</a>
+            {% if pkg %}
+                <a href="{% reverse_man_url pkg.repo pkg.name man.name man.section man.lang '' %}">{{ man.name }}({{ man.section }})</a>
+            {% else %}
+                <a href="{% reverse_man_url '' '' man.name man.section man.lang '' %}">{{ man.name }}({{ man.section }})</a>
+            {% endif %}
         </li>
     {% endfor %}
     </ul>
 {% else %}
-    <p>No man pages in this list.</p>
+    <p>No manual pages matching these criteria.</p>
 {% endif %}
 
 {% if man_pages.paginator.num_pages != 1 %}
@@ -37,7 +64,7 @@
 
 {% if pkg and symlinks %}
     <section>
-    <p>...and these symbolic links:</p>
+    <h2>List of symbolic links</h2>
     <ul class="multi-column">
     {% for symlink in symlinks %}
         <li>
