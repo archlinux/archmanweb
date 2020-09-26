@@ -32,9 +32,9 @@
    automatically reload when you make changes to the webapp code or templates.
 
 7. Run the `update.py` script to import some man pages. However, note that the
-   full import requires to download about 7.5 GB of packages from a mirror of
+   full import requires to download about 7.5 GiB of packages from a mirror of
    the Arch repos and then the extraction takes about 20-30 minutes. (The volume
-   of all man pages is less than 300 MB though.) If you won't need all man pages
+   of all man pages is less than 300 MiB though.) If you won't need all man pages
    for the development, you can run e.g. `update.py --only-repos core` to import
    only man pages from the core repository (the smallest one, download size is
-   about 160 MB) or even `update.py --only-packages coreutils man-pages`.
+   about 160 MiB) or even `update.py --only-packages coreutils man-pages`.
