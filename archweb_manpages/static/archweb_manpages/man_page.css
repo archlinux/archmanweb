@@ -53,8 +53,11 @@
 {
     margin-top: 0em;
 }
-/* Override bottom margin of all last children. */
-.man-page-content :last-child {
+/* Override bottom margin of all last children except headers.
+ * (mandoc creates some sections where <h1> or <h2> is the only element and
+ * the text is not inside <p>
+ */
+.man-page-content :last-child:not(h1.Sh):not(h2.Ss) {
     margin-bottom: 0em;
 }
 
