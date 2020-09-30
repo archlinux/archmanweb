@@ -120,13 +120,15 @@ def _get_best_match(query, section="section"):
     queryset = sorted(queryset, key=sort_key)
     return queryset[0]
 
-def try_redirect_or_404(request, repo, pkgname, man_name, man_section, lang, output_type, name_section_lang):
+def get_symlink(repo, pkgname, man_name, man_section, lang, output_type):
     if man_section is None:
         query = SymbolicLink.objects.filter(from_name=man_name, lang=lang, **_get_package_filter(repo, pkgname))
     else:
         query = SymbolicLink.objects.filter(from_section__startswith=man_section, from_name=man_name, lang=lang, **_get_package_filter(repo, pkgname))
-    symlink = _get_best_match(query, "from_section")
+    return _get_best_match(query, "from_section")
 
+def try_redirect_or_404(repo, pkgname, man_name, man_section, lang, output_type, name_section_lang):
+    symlink = get_symlink(repo, pkgname, man_name, man_section, lang, output_type)
     if symlink is not None:
         # repo and pkgname are not added, the target might be in a different package
         url = reverse_man_url("", "", symlink.to_name, symlink.to_section, symlink.lang, output_type)
@@ -176,10 +178,18 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
     db_man = _get_best_match(query)
 
     if db_man is None:
-        return try_redirect_or_404(request, repo, pkgname, man_name, man_section, lang, url_output_type, name_section_lang)
-    # redirect if man_section is None or just a prefix
+        return try_redirect_or_404(repo, pkgname, man_name, man_section, lang, url_output_type, name_section_lang)
     if man_section != db_man.section:
-        return HttpResponseRedirect(reverse_man_url(repo, pkgname, man_name, db_man.section, url_lang, url_output_type))
+        # try a symlink and check if its section is a better match than the man section
+        # (e.g. mailx.1 is a symlink to mail.1, which takes precedence over mailx.1p)
+        db_symlink = get_symlink(repo, pkgname, man_name, man_section, lang, url_output_type)
+        if db_symlink is not None and _get_section_key(db_symlink.from_section) < _get_section_key(db_man.section):
+            # repo and pkgname are not added, the target might be in a different package
+            url = reverse_man_url("", "", db_symlink.to_name, db_symlink.to_section, db_symlink.lang, url_output_type)
+            return HttpResponseRedirect(url)
+        # redirect if man_section is None or just a prefix
+        url = reverse_man_url(repo, pkgname, man_name, db_man.section, url_lang, url_output_type)
+        return HttpResponseRedirect(url)
     db_pkg = db_man.package
 
     if serve_output_type == "raw":
