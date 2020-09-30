@@ -76,6 +76,32 @@ def _parse_man_name_section_lang(url_snippet, *, force_lang=None):
         # name.with.dots
         return url_snippet, None, None
 
+def _get_section_key(section):
+    # section sorting:
+    #   - based on mandoc: 1, 8, 6, 2, 3, 5, 7, 4, 9, 3p
+    #   - based on man-db: 1, n, l, 8, 3, 0, 2, 5, 4, 9, 6, 7
+    order = ("1", "n", "l", "8", "6", "3", "0", "2", "5", "7", "4", "9")
+    # sections in the list are ordered first
+    if section in order:
+        return (order.index(section), "")
+    # sections which start with a letter in the list are sorted next
+    # (following the same ordering of the first letter and lexical ordering of the rest)
+    if section[0] in order:
+        return (order.index(section[0]) + len(order), section[1:])
+    # other sections are ordered last (respecting the lexical order wrt each other)
+    return (100, section)
+
+def _get_repo_key(repo):
+    order = ("core", "extra", "community", "multilib", "testing", "community-testing", "multilib-testing")
+    if repo in order:
+        return (order.index(repo), "")
+    return (len(order), repo)
+
+def _get_pkgver_key(version):
+    # arguments of vercmp are swapped to order the highest version first
+    key_getter = functools.cmp_to_key(lambda a, b: pyalpm.vercmp(b, a))
+    return key_getter(version)
+
 def _get_best_match(query, section="section"):
     # prefetch the package object so that we don't hit the db repeatedly while sorting
     # (we can fetch all matches and do the sorting in Python since there are not many
@@ -84,40 +110,11 @@ def _get_best_match(query, section="section"):
     if len(queryset) == 0:
         return None
 
-    def get_section_key(section):
-        # section sorting:
-        #   - based on mandoc: 1, 8, 6, 2, 3, 5, 7, 4, 9, 3p
-        #   - based on man-db: 1, n, l, 8, 3, 0, 2, 5, 4, 9, 6, 7
-        order = ("1", "n", "l", "8", "6", "3", "0", "2", "5", "7", "4", "9")
-        # sections in the list are ordered first
-        if section in order:
-            return (order.index(section), "")
-        # sections which start with a letter in the list are sorted next
-        # (following the same ordering of the first letter and lexical ordering of the rest)
-        if section[0] in order:
-            return (order.index(section[0]) + len(order), section[1:])
-        # other sections are ordered last (respecting the lexical order wrt each other)
-        return (100, section)
-
-    def get_repo_key(repo):
-        order = ("core", "extra", "community", "multilib", "testing", "community-testing", "multilib-testing")
-        if repo in order:
-            return (order.index(repo), "")
-        return (len(order), repo)
-
-    def get_pkgver_key(version):
-        # arguments of vercmp are swapped to order the highest version first
-        key_getter = functools.cmp_to_key(lambda a, b: pyalpm.vercmp(b, a))
-        return key_getter(version)
-
-    # sorting for best match:
-    #   - section (based on above)
-    #   - repo (based on above)
-    #   - package version (based on vercmp)
+    # sorting for best match: section (custom order), repo (custom order), package version (vercmp)
     def sort_key(man):
-        sec_key = get_section_key(getattr(man, section))
-        repo_key = get_repo_key(man.package.repo)
-        pkgver_key = get_pkgver_key(man.package.version)
+        sec_key = _get_section_key(getattr(man, section))
+        repo_key = _get_repo_key(man.package.repo)
+        pkgver_key = _get_pkgver_key(man.package.version)
         return (sec_key, repo_key, pkgver_key)
 
     queryset = sorted(queryset, key=sort_key)
