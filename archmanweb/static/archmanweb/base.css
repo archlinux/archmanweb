@@ -265,6 +265,18 @@ main#content {
     }
 }
 
+/* footer */
+footer {
+    clear: both;
+    margin: 2em 1em 1em;
+}
+
+footer p {
+    margin: .5em 0;
+    text-align: center;
+    font-size: 0.8em;
+}
+
 .box {
     margin-bottom: 1.5em;
     padding: 0.65em;
