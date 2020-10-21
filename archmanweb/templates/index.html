@@ -45,6 +45,7 @@ There are several ways to find a specific manual page:
 The manual pages are addressable as
 <code>/man/&lt;repo&gt;/&lt;pkgname&gt;/&lt;page&gt;.&lt;section&gt;.&lt;language&gt;.&lt;format&gt;</code>.
 Any part except <code>&lt;page&gt;</code> is optional:
+</p>
 <ul>
     <li><code>&lt;repo&gt;</code> and <code>&lt;pkgname&gt;</code> can be used to disambiguate the
         page version found in multiple packages. If omitted, manual pages are looked up in package
@@ -56,6 +57,7 @@ Any part except <code>&lt;page&gt;</code> is optional:
     <li>The default format is <code>html</code> (other supported formats are <code>txt</code> and
         <code>raw</code>).</li>
 </ul>
+<p>
 Note that symbolic links, such as <a href="{% url 'index' %}man/bunzip2.1">bunzip2(1)</a>, are
 implemented as HTTP redirects with the 302 status code. Symbolic links are included in per-package
 listings, such as <a href="{% url 'listing' %}/core/openssl/">core/openssl</a>.
@@ -67,7 +69,4 @@ listings, such as <a href="{% url 'listing' %}/core/openssl/">core/openssl</a>.
 </section>
 
 </article>
-{% endblock %}
-
-{% block footer %}
 {% endblock %}
