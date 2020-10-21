@@ -18,7 +18,7 @@ import django
 django.setup()
 from django.db import connection, transaction
 from django.db.models import Count
-from archweb_manpages.models import Package, Content, ManPage, SymbolicLink, UpdateLog, SoelimError
+from archmanweb.models import Package, Content, ManPage, SymbolicLink, UpdateLog, SoelimError
 
 
 logger = logging.getLogger(__name__)
