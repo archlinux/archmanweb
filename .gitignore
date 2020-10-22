@@ -1,1 +1,8 @@
-/.cache
+# Python
+__pycache__/
+
+# Django
+local_settings.py
+
+# pacman
+/.cache/
