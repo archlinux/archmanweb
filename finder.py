@@ -24,8 +24,6 @@ LogFile     = {pacdbpath}
 GPGDir      = /etc/pacman.d/gnupg/
 Architecture = {arch}
 
-# Repos needed for Template:Pkg checking
-
 [core]
 Include = /etc/pacman.d/mirrorlist
 
@@ -42,11 +40,10 @@ Include = /etc/pacman.d/mirrorlist
 MANDIR = "usr/share/man/"
 
 class ManPagesFinder:
-    def __init__(self, tmpdir):
-        self.tmpdir = Path(tmpdir) / "arch-manpages"
-        self.tmpdir = self.tmpdir.resolve()
-        self.dbpath = self.tmpdir / "pacdbpath"
-        self.cachedir = self.tmpdir / "cached_packages"
+    def __init__(self, topdir):
+        topdir = Path(topdir).resolve()
+        self.dbpath = topdir / "pacdbpath"
+        self.cachedir = topdir / "cached_packages"
 
         os.makedirs(self.dbpath, exist_ok=True)
         os.makedirs(self.cachedir, exist_ok=True)
@@ -79,6 +76,7 @@ class ManPagesFinder:
                 "timestamp": local_timestamp,
             })
 
+    # TODO: working with the files databases is not implemented in pyalpm: https://gitlab.archlinux.org/archlinux/pyalpm/-/issues/6
     # TODO: check integrity of the downloaded files
     def _refresh_files_db(self, db):
         for server in db.servers:
@@ -165,8 +163,7 @@ class ManPagesFinder:
         class Options:
             downloadonly = True
             nodeps = True
-        o = Options
-        t = pycman.transaction.init_from_options(self.sync_db, o)
+        t = pycman.transaction.init_from_options(self.sync_db, Options)
 
         # reset callback functions which print lots of text into the logs
         def _void_cb(*args):
