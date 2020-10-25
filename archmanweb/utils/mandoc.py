@@ -3,36 +3,10 @@ import re
 import textwrap
 
 from django.urls import reverse
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from .django import reverse_man_url
+from .encodings import normalize_html_entities
 
-def reverse_man_url(repo, pkgname, man_name, man_section, man_lang, content_type):
-    # django's reverse function can't reverse our regexes, so we're doing it the old way
-    url = reverse("index") + "man/"
-    if repo:
-        url += repo + "/"
-    if pkgname:
-        url += pkgname + "/"
-    url += man_name
-    if man_section:
-        url += "." + man_section
-    if man_lang:
-        url += "." + man_lang
-    if content_type:
-        url += "." + content_type
-    return url
-
-def paginate(request, url_param, query, limit):
-    paginator = Paginator(query, limit)
-    page = request.GET.get(url_param)
-    try:
-        query = paginator.page(page)
-    except PageNotAnInteger:
-        # If page is not an integer, deliver the first page.
-        query = paginator.page(1)
-    except EmptyPage:
-        # If page is out of range, deliver the last page.
-        query = paginator.page(paginator.num_pages)
-    return query
+__all__ = ["mandoc_convert", "postprocess", "extract_headings", "extract_description"]
 
 def mandoc_convert(content, output_type, lang=None):
     if output_type == "html":
@@ -90,14 +64,6 @@ def postprocess(text, content_type, lang):
     elif content_type == "txt":
         # strip mandoc's back-spaced encoding
         return re.sub(".\b", "", text, flags=re.DOTALL)
-
-def normalize_html_entities(s):
-    def repl(match):
-        # TODO: add some error checking
-        if match.group(1):
-            return chr(int(match.group(2), 16))
-        return chr(int(match.group(2)))
-    return re.sub(r"&#(x?)([0-9a-fA-F]+);", repl, s)
 
 def extract_headings(html):
     def normalize(title):
