@@ -237,6 +237,10 @@ main#content {
     /* max-width of .man-page-content has to be specified here to make it play
      * nice with flex */
     max-width: 80ch;
+    /* set min-width to prevent excessive shrinking
+     * (and to force shrinking in case there is an element which refuses to
+     * shrink, e.g. a very long line in a <pre> tag) */
+    min-width: 40ch;
     /* shrinks to 0 to apply 70% width */
     flex-shrink: 0;
     /* sets initial width to 70% */

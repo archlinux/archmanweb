@@ -39,7 +39,8 @@
  * such as ".Bl-tag > dd".
  */
 .man-page-content p {
-    margin: 0.6em 0;
+    margin-top: 0.6em;
+    margin-bottom: 0.6em;
 }
 /* Override top margin of first children in elements for which mandoc sets zero
  * margin (cannot be done everywhere because of the note above).
