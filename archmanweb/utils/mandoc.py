@@ -18,6 +18,62 @@ def mandoc_convert(content, output_type, lang=None):
     assert p.stdout
     return p.stdout
 
+def _replace_urls_in_plain_text(html):
+    def repl_url(match):
+        url = match.group("url")
+        if not url:
+            return match.group(0)
+        return f"<a href='{url}'>{url}</a>"
+
+    skip_tags_pattern = r"\<(?P<skip_tag>a|pre)[^>]*\>.*?\</(?P=skip_tag)\>"
+    url_pattern = r"(?P<url>https?://[^\s<>&]+(?<=[\w/]))"
+    surrounding_tag_begin = r"(?P<tag_begin>\<(?P<tag>b|i|strong|em|mark)[^>]*\>\s*)?"
+    surrounding_tag_end = r"(?(tag_begin)\s*\</(?P=tag)\>|)"
+    surrounding_angle_begin = r"(?P<angle>&lt;)?"
+    surrounding_angle_end = r"(?(angle)&gt;|)"
+    html = re.sub(f"{skip_tags_pattern}|{surrounding_angle_begin}{surrounding_tag_begin}{url_pattern}{surrounding_tag_end}{surrounding_angle_end}",
+                  repl_url, html, flags=re.DOTALL)
+
+    # if the URL is the only text in <pre> tags, it gets replaced
+    html = re.sub(f"<pre>\s*{url_pattern}\s*</pre>",
+                  repl_url, html, flags=re.DOTALL)
+
+    return html
+
+def _replace_section_heading_ids(html):
+    """
+    Replace IDs for section headings and self-links with something sensible and wiki-compatible
+
+    E.g. mandoc does not strip the "\&" roff(7) escape, may lead to duplicate underscores,
+    and sometimes uses weird encoding for some chars.
+    """
+    # section ID getter capable of handling duplicate titles
+    ids = set()
+    def get_id(title):
+        base_id = anchorencode(title)
+        id = base_id
+        j = 2
+        while id in ids:
+            id = base_id + "_" + str(j)
+            j += 1
+        ids.add(id)
+        return id
+
+    def repl_heading(match):
+        heading_tag = match.group("heading_tag")
+        heading_attributes = match.group("heading_attributes")
+        heading_attributes = " ".join(a for a in heading_attributes.split() if not a.startswith("id="))
+        title = match.group("title").replace("\n", " ")
+        id = get_id(title)
+        return f"<{heading_tag} {heading_attributes} id='{id}'><a class='permalink' href='#{id}'>{title}</a></{heading_tag}>"
+
+    pattern = re.compile(r"\<(?P<heading_tag>h[1-6])(?P<heading_attributes>[^\>]*)\>[^\<\>]*"
+                         r"\<a class=(\"|\')permalink(\"|\')[^\>]*\>"
+                         r"(?P<title>.+?)"
+                         r"\<\/a\>[^\<\>]*"
+                         r"\<\/(?P=heading_tag)\>", re.DOTALL)
+    return re.sub(pattern, repl_heading, html)
+
 def postprocess(text, content_type, lang):
     assert content_type in {"html", "txt"}
     if content_type == "html":
@@ -42,50 +98,10 @@ def postprocess(text, content_type, lang):
         text = re.sub(r"(?<=\</(pre|div)\>)\n?<br/>", "", text)
 
         # replace URLs in plain-text with <a> links
-        def repl_url(match):
-            url = match.group("url")
-            if not url:
-                return match.group(0)
-            return f"<a href='{url}'>{url}</a>"
-        skip_tags_pattern = r"\<(?P<skip_tag>a|pre)[^>]*\>.*?\</(?P=skip_tag)\>"
-        url_pattern = r"(?P<url>https?://[^\s<>&]+(?<=[\w/]))"
-        surrounding_tag_begin = r"(?P<tag_begin>\<(?P<tag>b|i|strong|em|mark)[^>]*\>\s*)?"
-        surrounding_tag_end = r"(?(tag_begin)\s*\</(?P=tag)\>|)"
-        surrounding_angle_begin = r"(?P<angle>&lt;)?"
-        surrounding_angle_end = r"(?(angle)&gt;|)"
-        text = re.sub(f"{skip_tags_pattern}|{surrounding_angle_begin}{surrounding_tag_begin}{url_pattern}{surrounding_tag_end}{surrounding_angle_end}",
-                      repl_url, text, flags=re.DOTALL)
-        # if the URL is the only text in <pre> tags, it gets replaced
-        text = re.sub(f"<pre>\s*{url_pattern}\s*</pre>",
-                      repl_url, text, flags=re.DOTALL)
+        text = _replace_urls_in_plain_text(text)
 
         # replace IDs for section headings and self-links with something sensible and wiki-compatible
-        # (e.g. mandoc does not strip the "\&" roff(7) escape, may lead to duplicate underscores,
-        # and sometimes uses weird encoding for some chars)
-        headings_pattern = re.compile(r"\<(?P<heading_tag>h[1-6])(?P<heading_attributes>[^\>]*)\>[^\<\>]*"
-                                      r"\<a class=(\"|\')permalink(\"|\')[^\>]*\>"
-                                      r"(?P<title>.+?)"
-                                      r"\<\/a\>[^\<\>]*"
-                                      r"\<\/(?P=heading_tag)\>", re.DOTALL)
-        # section ID getter capable of handling duplicate titles
-        ids = set()
-        def get_id(title):
-            base_id = anchorencode(title)
-            id = base_id
-            j = 2
-            while id in ids:
-                id = base_id + "_" + str(j)
-                j += 1
-            ids.add(id)
-            return id
-        def repl_heading(match):
-            heading_tag = match.group("heading_tag")
-            heading_attributes = match.group("heading_attributes")
-            heading_attributes = " ".join(a for a in heading_attributes.split() if not a.startswith("id="))
-            title = match.group("title").replace("\n", " ")
-            id = get_id(title)
-            return f"<{heading_tag} {heading_attributes} id='{id}'><a class='permalink' href='#{id}'>{title}</a></{heading_tag}>"
-        text = re.sub(headings_pattern, repl_heading, text)
+        text = _replace_section_heading_ids(text)
 
         return text
 
