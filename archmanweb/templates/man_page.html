@@ -39,7 +39,7 @@
     <nav class="toc">
         <ul>
         {% for h in headings %}
-            <li><a href="#{{ h.id }}">{{ h.title }}</a></li>
+            <li><a href="#{{ h.id | safe }}">{{ h.title | safe }}</a></li>
         {% endfor %}
         </ul>
     </nav>
