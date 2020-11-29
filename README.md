@@ -6,11 +6,11 @@
 
 ## Installation
 
-1. In the directory `mysite` copy `local_settings.py.example` to `local_settings.py` and edit `DEBUG = True` and the `SECRET_KEY` variable.
+1. Copy `local_settings.py.example` to `local_settings.py` and edit `DEBUG = True` and the `SECRET_KEY` variable.
 
 2. Configure a connection to a [PostgreSQL](https://wiki.archlinux.org/index.php/PostgreSQL) database
-   in the [Django database settings](https://docs.djangoproject.com/en/1.11/ref/settings/#databases)
-   in the `mysite/local_settings.py` file.
+   in the [Django database settings](https://docs.djangoproject.com/en/3.1/ref/settings/#databases)
+   in the `local_settings.py` file.
 
 3. Make sure that the [pg_trgm](https://www.postgresql.org/docs/current/pgtrgm.html)
    extension is [created](https://www.postgresql.org/docs/current/sql-createextension.html)

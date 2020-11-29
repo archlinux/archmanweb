@@ -13,7 +13,7 @@ import pyalpm
 from finder import MANDIR, ManPagesFinder
 
 # init django
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "local_settings")
 import django
 django.setup()
 from django.db import connection, transaction

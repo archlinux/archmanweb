@@ -5,7 +5,7 @@ import os
 import django
 from django.db import connection
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "local_settings")
 django.setup()
 
 with connection.cursor() as c:
