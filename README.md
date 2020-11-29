@@ -38,3 +38,161 @@
    for the development, you can run e.g. `update.py --only-repos core` to import
    only man pages from the core repository (the smallest one, download size is
    about 160 MiB) or even `update.py --only-packages coreutils man-pages`.
+
+## About
+
+This website was created for the [man template](https://wiki.archlinux.org/index.php/Template:Man)
+on the Arch wiki. Originally, the template replaced plain text, unclickable
+references to man pages with links to [man7.org](https://man7.org/linux/man-pages/),
+which contains a handful of manuals taken directly from upstream. Later, we
+considered switching to another site providing more manuals. Since we did not
+find a suitable external site, we decided to build a new service to satisfy all
+our requirements:
+
+1. All man pages from official Arch packages are available. Old versions and
+   permalinks are not necessary.
+2. Functionality does not require Javascript.
+3. Pages are addressable by their name and section, both occurring exactly once
+   in the URL to avoid problems with pages such as
+   [ar(1)](https://jlk.fjfi.cvut.cz/arch/manpages/man/ar.1) and
+   [ar(1p)](https://jlk.fjfi.cvut.cz/arch/manpages/man/ar.1p).
+4. The URLs used by the _man_ template should not redirect to permalinks,
+   otherwise users would start copy-pasting them to the wiki and it would be
+   hard to check if they are the same as the canonical URLs.
+5. Human-readable subsection anchors.
+6. The page should clearly indicate the Arch package version containing the
+   page.
+
+See the [original discussion](https://wiki.archlinux.org/index.php/Template_talk:Man#Sources)
+for details.
+
+We used a dynamic approach instead of building a website consisting of
+completely static pages. The main building blocks are the
+[Django web framework](https://www.djangoproject.com/), the
+[PostgreSQL](https://www.postgresql.org/) database server, the `mandoc` tool
+from the [mandoc toolset](http://mdocml.bsd.lv/) for the conversion to HTML and
+the [pyalpm](https://github.com/archlinux/pyalpm) library for data extraction
+from the Arch repositories. The code is available in the
+[lahwaacz/archmanweb](https://github.com/lahwaacz/archmanweb) repository at
+GitHub.
+
+Overall, this approach allows us to provide the following features without
+rebuilding the whole website from scratch:
+
+- Listings with custom filters and orderings.
+- Links to other versions of the same manual provided by different packages.
+- Links to similar manuals available in other sections or languages.
+- Searching in the names and descriptions of packages and manuals, similarly to
+  [apropos(1)](https://jlk.fjfi.cvut.cz/arch/manpages/about).
+
+### Similar projects
+
+Some similar projects, each using a different approach, are:
+
+- [manned.org](https://manned.org/) ([code](https://g.blicky.net/manned.git/),
+  [Arch BBS thread](https://bbs.archlinux.org/viewtopic.php?id=145382))
+- [man7.org](http://man7.org/linux/man-pages/) (no idea about website scripts)
+- [manpages.debian.org](https://manpages.debian.org/)
+  ([source](https://github.com/Debian/debiman/))
+- [man.openbsd.org](http://man.openbsd.org/) (runs with the mandoc CGI script)
+
+## Test cases
+
+These links serve as test cases to ensure that all features still work, they
+are not useful to regular users.
+
+### URLs with dots
+
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/intro">intro</a>
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/intro.1">intro.1</a>
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/intro.1.en">intro.1.en</a>
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/intro.en">intro.en</a>
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/systemd.service">systemd.service</a>
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/systemd.service.5">systemd.service.5</a>
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/systemd.service.5.en">systemd.service.5.en</a>
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/systemd.service.en">systemd.service.en</a>
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/gimp-2.8">gimp-2.8</a>
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/gimp-2.8.1">gimp-2.8.1</a>
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/gimp-2.8.1.en">gimp-2.8.1.en</a>
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/gimp-2.8.en">gimp-2.8.en</a>
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/CA.pl">CA.pl</a>
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/CA.pl.1ssl">CA.pl.1ssl</a>
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/CA.pl.1ssl.en">CA.pl.1ssl.en</a>
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/CA.pl.en">CA.pl.en</a>
+
+### Best match lookup
+
+Ambiguous cases are ordered by section, package repository and package version,
+then the first manual is selected.
+
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/mount">mount</a> redirects to
+  <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/mount.8">mount.8</a>
+  (not <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/mount.2">mount.2</a>)
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/gv">gv</a> redirects to
+  <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/gv.1">gv.1</a>
+  (not <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/gv.3guile">gv.3guile</a>,
+  <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/gv.3lua">gv.3lua</a> etc.)
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/graphviz/gv">graphviz/gv</a> redirects to
+  <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/graphviz/gv.3guile">graphviz/gv.3guile</a>
+  (not <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/graphviz/gv.3lua">graphviz/gv.3lua</a> etc.)
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/gv.3">gv.3</a> redirects to
+  <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/gv.3guile">gv.3guile</a>
+  (not <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/gv.1">gv.1</a>,
+  <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/gv.3lua">gv.3lua</a> etc.)
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/aliases.5">aliases.5</a> displays
+  <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/extra/postfix/aliases.5">extra/postfix/aliases.5</a>
+  (not <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/community/opensmtpd/aliases.5">community/opensmtpd/aliases.5</a>)
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/mysqld.8">mysqld.8</a> displays
+  <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/extra/mariadb/mysqld.8">extra/mariadb/mysqld.8</a>
+  (not <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/community/percona-server/mysqld.8">community/percona-server/mysqld.8</a>)
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/mailx">mailx</a> and
+  <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/mailx.1">mailx.1</a> redirect to
+  <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/mail.1.en">mail.1.en</a> as a symbolic link
+  (not <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/mailx.1p">mailx.1p</a>)
+
+### Language fallback
+
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/nvidia-smi.cs">nvidia-smi.cs</a> &rarr;
+  <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/nvidia-smi.en">nvidia-smi.en</a> &rarr;
+  <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/nvidia-smi.1.en">nvidia-smi.1.en</a>
+  (maybe we should try harder and avoid the double redirect)
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/nvidia-smi.1.cs">nvidia-smi.1.cs</a> &rarr;
+  <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/nvidia-smi.1.en">nvidia-smi.1.en</a>
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/nvidia-smi.foo">nvidia-smi.foo</a> &rarr; 404
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/nvidia-smi.1.foo">nvidia-smi.1.foo</a> &rarr; 404
+
+### Package filter
+
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/nvidia-utils/nvidia-smi.en">nvidia-utils/nvidia-smi.en</a>
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/nvidia-340xx-utils/nvidia-smi.en">nvidia-340xx-utils/nvidia-smi.en</a>
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/nvidia-utils/nvidia-smi.cs">nvidia-utils/nvidia-smi.cs</a> &rarr;
+  <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/nvidia-utils/nvidia-smi.en">nvidia-utils/nvidia-smi.en</a>
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/nvidia-340xx-utils/nvidia-smi.cs">nvidia-340xx-utils/nvidia-smi.cs</a> &rarr;
+  <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/nvidia-340xx-utils/nvidia-smi.cs">nvidia-utils/nvidia-340xx-smi.en</a>
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/foo/nvidia-smi.cs">foo/nvidia-smi.cs</a> &rarr; 404
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/foo/nvidia-smi.en">foo/nvidia-smi.en</a> &rarr; 404
+
+### .so macros
+
+There is a <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/groff.1">groff(1)</a> extension for the
+<a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/man.7">man(7)</a> and
+<a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/mdoc.7">mdoc(7)</a>
+languages to include contents of other files using the `.so` macro. In normal
+operation where manuals are stored as files on a file system, the
+<a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/soelim.1">soelim(1)</a>
+pre-processor handles the inclusion. Our system is based on a database rather
+than a file system, so we need a custom `soelim` as well.
+
+Some pages which contain the `.so` macro:
+
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/[.1.zh_CN">[.1.zh_CN</a>
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/pwunconv.8">pwunconv(8)</a>
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/pam.8">pam(8)</a>
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/url.7">url(7)</a>
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/xorg.conf.d.5">xorg.conf.d(5)</a>
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/glibc.7">glibc(7)</a>
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/systemd-logind.8">systemd-logind(8)</a>
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/shorewall6.conf.5">shorewall6.conf(5)</a>
+  points to a page contained in a different package (`shorewall` instead of `shorewall6`)
+- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/lsof.8">lsof(8)</a>
+  (not a "hardlink", includes an invalid file `./00DIALECTS`)

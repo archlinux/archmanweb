@@ -12,5 +12,4 @@ urlpatterns = [
             r"(\.(?P<url_output_type>html|txt|raw))?$",
             views.man_page, name="man_page"),
     re_path(r"^search", views.search, name="search"),
-    re_path(r"^(?P<template_name>[a-z]+)", views.simple_view, name="simple_view"),
 ]
