@@ -1,48 +1,8 @@
-header {
-    padding: 10px 15px;
-    background: #333;
-    border-bottom: 5px #08c solid;
-    color: white !important;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-family: sans-serif;
-}
-header > h1 {
-    font-size: 1.25em;
-    margin: 0;
-}
-header > nav {
-    margin-bottom: 0;
-}
-header > nav > a {
-    font-weight: bold;
-    font-size: 1em;
-    text-decoration: none;
-    color: #999 !important;
-}
-header > nav > a:focus,
-header > nav > a:hover {
-    text-decoration: underline;
-    color: white !important;
-}
-header > nav > a.selected {
-    color: white !important;
-}
-header > nav > a:not(:last-child) {
-    margin-right: 1em;
-}
-
-/* responsive header */
-@media only screen and (max-width: 650px) {
-    header {
-        /* place the items in vertical direction */
-        flex-direction: column;
-    }
-
-    header > :not(:last-child) {
-        margin: 0 0 0.5rem;
-    }
+#archnavbar form {
+    display: inline-block !important;
+    font-size: 14px !important;
+    line-height: 14px !important;
+    padding: 14px 15px 0px !important;
 }
 
 /* simple reset */
