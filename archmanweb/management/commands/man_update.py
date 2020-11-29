@@ -10,12 +10,10 @@ import subprocess
 import chardet
 import pyalpm
 
-from finder import MANDIR, ManPagesFinder
+from archmanweb.management.utils.finder import MANDIR, ManPagesFinder
 
-# init django
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "local_settings")
+from django.core.management.base import BaseCommand
 import django
-django.setup()
 from django.db import connection, transaction
 from django.db.models import Count
 from archmanweb.models import Package, Content, ManPage, SymbolicLink, UpdateLog, SoelimError
@@ -313,93 +311,113 @@ def update_man_pages(finder, updated_pkgs):
     return updated_pages
 
 
-if __name__ == "__main__":
-    # init logging
-    logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter("{levelname:8} {message}", style="{")
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
+class Command(BaseCommand):
+    help = "Update man pages in the Django database"
 
-    parser = argparse.ArgumentParser(description="update man pages in the django database")
-    parser.add_argument("--force", action="store_true",
-                        help="force an import of man pages from all packages, even if they were not updated recently")
-    parser.add_argument("--only-repos", action="store", nargs="+", metavar="NAME",
-                        help="import packages (and man pages) only from these repositories")
-    parser.add_argument("--only-packages", action="store", nargs="+", metavar="NAME",
-                        help="import man pages only from these packages")
-    parser.add_argument("--cache-dir", action="store", default="./.cache/",
-                        help="path to the cache directory (default: %(default)s)")
-    parser.add_argument("--keep-tarballs", action="store_true",
-                        help="keep downloaded package tarballs in the cache directory")
-    parser.add_argument("--workers", type=int, default=0,
-                        help="number of workers for parallel processing (0 = use 1 worker per CPU core)")
-    args = parser.parse_args()
+    def __init__(self, *args, **kwargs):
+        BaseCommand.__init__(self, *args, **kwargs)
 
-    start = datetime.datetime.now(tz=datetime.timezone.utc)
+        # TODO: use Django settings to configure the logger
+        # https://docs.djangoproject.com/en/3.1/topics/logging/
+        logger = logging.getLogger()
+        logger.setLevel(logging.INFO)
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter("{levelname:8} {message}", style="{")
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
 
-    finder = ManPagesFinder(args.cache_dir)
-    finder.refresh()
+    def add_arguments(self, parser):
+        """
+        :param parser: an instance of :py:class:`argparse.ArgumentParser`
+        """
+        parser.add_argument("--force", action="store_true",
+                            help="force an import of man pages from all packages, even if they were not updated recently")
+        parser.add_argument("--only-repos", action="store", nargs="+", metavar="NAME",
+                            help="import packages (and man pages) only from these repositories")
+        parser.add_argument("--only-packages", action="store", nargs="+", metavar="NAME",
+                            help="import man pages only from these packages")
+        parser.add_argument("--cache-dir", action="store", default="./.cache/",
+                            help="path to the cache directory (default: %(default)s)")
+        parser.add_argument("--keep-tarballs", action="store_true",
+                            help="keep downloaded package tarballs in the cache directory")
+        parser.add_argument("--workers", type=int, default=0,
+                            help="number of workers for parallel processing (0 = use 1 worker per CPU core; default: %(default)s)")
 
-    # everything in a single transaction
-    with transaction.atomic():
-        updated_pkgs = update_packages(finder, force=args.force, only_repos=args.only_repos)
-        if args.only_packages is None:
-            count_updated_pages = update_man_pages(finder, updated_pkgs)
-        else:
-            count_updated_pages = update_man_pages(finder, [p for p in updated_pkgs if p.name in args.only_packages])
+    def handle(self, **kwargs):
+        start = datetime.datetime.now(tz=datetime.timezone.utc)
+        updated_pkgs, count_updated_pages = self.do_update(**kwargs)
+        end = datetime.datetime.now(tz=datetime.timezone.utc)
 
-    # this is called outside of the transaction, so that the cache can be reused on errors
-    if args.keep_tarballs is False:
-        finder.clear_pkgcache()
+        # log update
+        log = UpdateLog()
+        log.timestamp = start
+        log.duration = end - start
+        log.updated_pkgs = len(updated_pkgs)
+        log.updated_pages = count_updated_pages
+        log.stats_count_man_pages = ManPage.objects.count()
+        log.stats_count_symlinks = SymbolicLink.objects.count()
+        log.stats_count_all_pkgs = Package.objects.count()
+        log.stats_count_pkgs_with_mans = ManPage.objects.aggregate(Count("package_id", distinct=True))["package_id__count"]
+        log.save()
 
-    # convert manual pages to plain-text
-    # (one transaction per update, otherwise we might hit memory allocation error)
-    def worker(man_id):
-        man = ManPage.objects.get(id=man_id)
-        try:
-            man.get_converted("txt")
-        except SoelimError as e:
-            logger.error("SoelimError ({}) while converting {}.{}.{} to txt".format(str(e), man.name, man.section, man.lang))
-        except subprocess.CalledProcessError as e:
-            logger.error("CalledProcessError while converting {}.{}.{} to txt:\nreturncode = {}\nstderr = {}"
-                         .format(man.name, man.section, man.lang, e.returncode, e.stderr))
+    def do_update(self, *, cache_dir, workers,
+                  force=False,
+                  only_repos=None,
+                  only_packages=None,
+                  keep_tarballs=False,
+                  **kwargs):
+        finder = ManPagesFinder(cache_dir)
+        finder.refresh()
 
-    # prepare man page IDs which need to be converted
-    # (queryset needs to be a list for multiprocessing to work)
-    queryset = ManPage.objects.only("package", "lang", "content_id", "converted_content_id").filter(content__txt=None).values_list("id", flat=True)
-    queryset = list(queryset)
+        # everything in a single transaction
+        with transaction.atomic():
+            updated_pkgs = update_packages(finder, force=force, only_repos=only_repos)
+            if only_packages is None:
+                count_updated_pages = update_man_pages(finder, updated_pkgs)
+            else:
+                count_updated_pages = update_man_pages(finder, [p for p in updated_pkgs if p.name in only_packages])
 
-    # all existing database connections have to be closed before forking,
-    # each process will then recreate its own connection:
-    # https://stackoverflow.com/a/10684672
-    django.db.connections.close_all()
+        # this is called outside of the transaction, so that the cache can be reused on errors
+        if keep_tarballs is False:
+            finder.clear_pkgcache()
 
-    # parallel processing of the queryset
-    import concurrent.futures
-    with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers or None) as executor:
-        executor.map(worker, queryset)
+        # convert manual pages to plain-text
+        # (one transaction per update, otherwise we might hit memory allocation error)
+        def worker(man_id):
+            man = ManPage.objects.get(id=man_id)
+            try:
+                man.get_converted("txt")
+            except SoelimError as e:
+                logger.error("SoelimError ({}) while converting {}.{}.{} to txt".format(str(e), man.name, man.section, man.lang))
+            except subprocess.CalledProcessError as e:
+                logger.error("CalledProcessError while converting {}.{}.{} to txt:\nreturncode = {}\nstderr = {}"
+                             .format(man.name, man.section, man.lang, e.returncode, e.stderr))
 
-    # VACUUM cannot run inside a transaction block
-    if updated_pkgs or args.only_packages is not None:
-        logger.info("Running VACUUM FULL ANALYZE on our tables...")
-        for Model in [Package, Content, ManPage, SymbolicLink]:
-            table = Model.objects.model._meta.db_table
-            logger.info("--> {}".format(table))
-            with connection.cursor() as cursor:
-                cursor.execute("VACUUM FULL ANALYZE {};".format(table))
+        # prepare man page IDs which need to be converted
+        # (queryset needs to be a list for multiprocessing to work)
+        queryset = ManPage.objects.only("package", "lang", "content_id", "converted_content_id").filter(content__txt=None).values_list("id", flat=True)
+        queryset = list(queryset)
 
-    end = datetime.datetime.now(tz=datetime.timezone.utc)
+        # all existing database connections have to be closed before forking,
+        # each process will then recreate its own connection:
+        # https://stackoverflow.com/a/10684672
+        django.db.connections.close_all()
 
-    # log update
-    log = UpdateLog()
-    log.timestamp = start
-    log.duration = end - start
-    log.updated_pkgs = len(updated_pkgs)
-    log.updated_pages = count_updated_pages
-    log.stats_count_man_pages = ManPage.objects.count()
-    log.stats_count_symlinks = SymbolicLink.objects.count()
-    log.stats_count_all_pkgs = Package.objects.count()
-    log.stats_count_pkgs_with_mans = ManPage.objects.aggregate(Count("package_id", distinct=True))["package_id__count"]
-    log.save()
+        # parallel processing of the queryset
+        import concurrent.futures
+        # FIXME: Why the fuck does it deadlock here, after we moved the code into the Command class?
+        #        Database connections are closed just above, which used to work before...
+        #with concurrent.futures.ProcessPoolExecutor(max_workers=workers or None) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=workers or None) as executor:
+            executor.map(worker, queryset)
+
+        # VACUUM cannot run inside a transaction block
+        if updated_pkgs or only_packages is not None:
+            logger.info("Running VACUUM FULL ANALYZE on our tables...")
+            for Model in [Package, Content, ManPage, SymbolicLink]:
+                table = Model.objects.model._meta.db_table
+                logger.info("--> {}".format(table))
+                with connection.cursor() as cursor:
+                    cursor.execute("VACUUM FULL ANALYZE {};".format(table))
+
+        return updated_pkgs, count_updated_pages
