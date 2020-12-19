@@ -32,8 +32,11 @@ STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "collected_static")
 
 # Look for more static files in these locations
+# (use a tuple to keep the directory namespaced)
+# https://docs.djangoproject.com/en/3.1/ref/settings/#prefixes-optional
 STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, "sitestatic"),
+    ("archlinux-common", os.path.join(BASE_DIR, "archlinux-common-style/css")),
+    ("archlinux-common", os.path.join(BASE_DIR, "archlinux-common-style/img")),
 )
 
 # Static files backend that appends the MD5 hash of the file’s content to the filename
