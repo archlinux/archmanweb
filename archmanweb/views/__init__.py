@@ -23,8 +23,3 @@ def index(request):
         "last_updates": last_updates,
     }
     return render(request, "index.html", context)
-
-def simple_view(request, *, template_name):
-    if template_name not in {"about", "dev"}:
-        raise Http404()
-    return render(request, "{}.html".format(template_name), {})

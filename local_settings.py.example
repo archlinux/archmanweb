@@ -1,0 +1,23 @@
+## Reference: https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
+
+## Import the common settings, which may be overridden in this file.
+from settings import *
+
+DEBUG = False
+
+## Make this unique, and don't share it with anybody.
+SECRET_KEY = '00000000000000000000000000000000000000000000000'
+
+## Must not be empty when DEBUG is False
+ALLOWED_HOSTS = []
+
+
+## PostgreSQL database settings
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.postgresql',
+#        'NAME': 'archmanweb',
+#        'USER': 'archmanweb',
+#        'PASSWORD': 'secret',
+#    }
+#}

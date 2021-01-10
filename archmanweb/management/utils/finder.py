@@ -188,9 +188,9 @@ class ManPagesFinder:
 
         # get the pkg tarball
         _pattern = "{}-{}-{}.pkg.tar.*".format(pkg.name, pkg.version, pkg.arch)
-        if not list(self.cachedir.glob(_pattern)):
+        if not list(f for f in self.cachedir.glob(_pattern) if not str(f).endswith(".part")):
             self._download_package(pkg)
-        tarballs = sorted(self.cachedir.glob(_pattern))
+        tarballs = sorted(f for f in self.cachedir.glob(_pattern) if not str(f).endswith(".part"))
         assert len(tarballs) > 0, _pattern
         tarball = tarballs[0]
 
