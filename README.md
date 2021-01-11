@@ -54,8 +54,8 @@ our requirements:
 2. Functionality does not require Javascript.
 3. Pages are addressable by their name and section, both occurring exactly once
    in the URL to avoid problems with pages such as
-   [ar(1)](https://jlk.fjfi.cvut.cz/arch/manpages/man/ar.1) and
-   [ar(1p)](https://jlk.fjfi.cvut.cz/arch/manpages/man/ar.1p).
+   [ar(1)](https://man.archlinux.org/man/ar.1) and
+   [ar(1p)](https://man.archlinux.org/man/ar.1p).
 4. The URLs used by the _man_ template should not redirect to permalinks,
    otherwise users would start copy-pasting them to the wiki and it would be
    hard to check if they are the same as the canonical URLs.
@@ -83,7 +83,7 @@ rebuilding the whole website from scratch:
 - Links to other versions of the same manual provided by different packages.
 - Links to similar manuals available in other sections or languages.
 - Searching in the names and descriptions of packages and manuals, similarly to
-  [apropos(1)](https://jlk.fjfi.cvut.cz/arch/manpages/about).
+  [apropos(1)](https://man.archlinux.org/man/apropos.1).
 
 ### Similar projects
 
@@ -103,96 +103,96 @@ are not useful to regular users.
 
 ### URLs with dots
 
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/intro">intro</a>
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/intro.1">intro.1</a>
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/intro.1.en">intro.1.en</a>
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/intro.en">intro.en</a>
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/systemd.service">systemd.service</a>
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/systemd.service.5">systemd.service.5</a>
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/systemd.service.5.en">systemd.service.5.en</a>
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/systemd.service.en">systemd.service.en</a>
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/gimp-2.8">gimp-2.8</a>
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/gimp-2.8.1">gimp-2.8.1</a>
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/gimp-2.8.1.en">gimp-2.8.1.en</a>
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/gimp-2.8.en">gimp-2.8.en</a>
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/CA.pl">CA.pl</a>
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/CA.pl.1ssl">CA.pl.1ssl</a>
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/CA.pl.1ssl.en">CA.pl.1ssl.en</a>
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/CA.pl.en">CA.pl.en</a>
+- <a href="https://man.archlinux.org/man/intro">intro</a>
+- <a href="https://man.archlinux.org/man/intro.1">intro.1</a>
+- <a href="https://man.archlinux.org/man/intro.1.en">intro.1.en</a>
+- <a href="https://man.archlinux.org/man/intro.en">intro.en</a>
+- <a href="https://man.archlinux.org/man/systemd.service">systemd.service</a>
+- <a href="https://man.archlinux.org/man/systemd.service.5">systemd.service.5</a>
+- <a href="https://man.archlinux.org/man/systemd.service.5.en">systemd.service.5.en</a>
+- <a href="https://man.archlinux.org/man/systemd.service.en">systemd.service.en</a>
+- <a href="https://man.archlinux.org/man/gimp-2.8">gimp-2.8</a>
+- <a href="https://man.archlinux.org/man/gimp-2.8.1">gimp-2.8.1</a>
+- <a href="https://man.archlinux.org/man/gimp-2.8.1.en">gimp-2.8.1.en</a>
+- <a href="https://man.archlinux.org/man/gimp-2.8.en">gimp-2.8.en</a>
+- <a href="https://man.archlinux.org/man/CA.pl">CA.pl</a>
+- <a href="https://man.archlinux.org/man/CA.pl.1ssl">CA.pl.1ssl</a>
+- <a href="https://man.archlinux.org/man/CA.pl.1ssl.en">CA.pl.1ssl.en</a>
+- <a href="https://man.archlinux.org/man/CA.pl.en">CA.pl.en</a>
 
 ### Best match lookup
 
 Ambiguous cases are ordered by section, package repository and package version,
 then the first manual is selected.
 
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/mount">mount</a> redirects to
-  <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/mount.8">mount.8</a>
-  (not <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/mount.2">mount.2</a>)
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/gv">gv</a> redirects to
-  <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/gv.1">gv.1</a>
-  (not <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/gv.3guile">gv.3guile</a>,
-  <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/gv.3lua">gv.3lua</a> etc.)
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/graphviz/gv">graphviz/gv</a> redirects to
-  <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/graphviz/gv.3guile">graphviz/gv.3guile</a>
-  (not <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/graphviz/gv.3lua">graphviz/gv.3lua</a> etc.)
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/gv.3">gv.3</a> redirects to
-  <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/gv.3guile">gv.3guile</a>
-  (not <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/gv.1">gv.1</a>,
-  <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/gv.3lua">gv.3lua</a> etc.)
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/aliases.5">aliases.5</a> displays
-  <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/extra/postfix/aliases.5">extra/postfix/aliases.5</a>
-  (not <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/community/opensmtpd/aliases.5">community/opensmtpd/aliases.5</a>)
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/mysqld.8">mysqld.8</a> displays
-  <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/extra/mariadb/mysqld.8">extra/mariadb/mysqld.8</a>
-  (not <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/community/percona-server/mysqld.8">community/percona-server/mysqld.8</a>)
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/mailx">mailx</a> and
-  <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/mailx.1">mailx.1</a> redirect to
-  <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/mail.1.en">mail.1.en</a> as a symbolic link
-  (not <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/mailx.1p">mailx.1p</a>)
+- <a href="https://man.archlinux.org/man/mount">mount</a> redirects to
+  <a href="https://man.archlinux.org/man/mount.8">mount.8</a>
+  (not <a href="https://man.archlinux.org/man/mount.2">mount.2</a>)
+- <a href="https://man.archlinux.org/man/gv">gv</a> redirects to
+  <a href="https://man.archlinux.org/man/gv.1">gv.1</a>
+  (not <a href="https://man.archlinux.org/man/gv.3guile">gv.3guile</a>,
+  <a href="https://man.archlinux.org/man/gv.3lua">gv.3lua</a> etc.)
+- <a href="https://man.archlinux.org/man/graphviz/gv">graphviz/gv</a> redirects to
+  <a href="https://man.archlinux.org/man/graphviz/gv.3guile">graphviz/gv.3guile</a>
+  (not <a href="https://man.archlinux.org/man/graphviz/gv.3lua">graphviz/gv.3lua</a> etc.)
+- <a href="https://man.archlinux.org/man/gv.3">gv.3</a> redirects to
+  <a href="https://man.archlinux.org/man/gv.3guile">gv.3guile</a>
+  (not <a href="https://man.archlinux.org/man/gv.1">gv.1</a>,
+  <a href="https://man.archlinux.org/man/gv.3lua">gv.3lua</a> etc.)
+- <a href="https://man.archlinux.org/man/aliases.5">aliases.5</a> displays
+  <a href="https://man.archlinux.org/man/extra/postfix/aliases.5">extra/postfix/aliases.5</a>
+  (not <a href="https://man.archlinux.org/man/community/opensmtpd/aliases.5">community/opensmtpd/aliases.5</a>)
+- <a href="https://man.archlinux.org/man/mysqld.8">mysqld.8</a> displays
+  <a href="https://man.archlinux.org/man/extra/mariadb/mysqld.8">extra/mariadb/mysqld.8</a>
+  (not <a href="https://man.archlinux.org/man/community/percona-server/mysqld.8">community/percona-server/mysqld.8</a>)
+- <a href="https://man.archlinux.org/man/mailx">mailx</a> and
+  <a href="https://man.archlinux.org/man/mailx.1">mailx.1</a> redirect to
+  <a href="https://man.archlinux.org/man/mail.1.en">mail.1.en</a> as a symbolic link
+  (not <a href="https://man.archlinux.org/man/mailx.1p">mailx.1p</a>)
 
 ### Language fallback
 
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/nvidia-smi.cs">nvidia-smi.cs</a> &rarr;
-  <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/nvidia-smi.en">nvidia-smi.en</a> &rarr;
-  <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/nvidia-smi.1.en">nvidia-smi.1.en</a>
+- <a href="https://man.archlinux.org/man/nvidia-smi.cs">nvidia-smi.cs</a> &rarr;
+  <a href="https://man.archlinux.org/man/nvidia-smi.en">nvidia-smi.en</a> &rarr;
+  <a href="https://man.archlinux.org/man/nvidia-smi.1.en">nvidia-smi.1.en</a>
   (maybe we should try harder and avoid the double redirect)
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/nvidia-smi.1.cs">nvidia-smi.1.cs</a> &rarr;
-  <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/nvidia-smi.1.en">nvidia-smi.1.en</a>
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/nvidia-smi.foo">nvidia-smi.foo</a> &rarr; 404
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/nvidia-smi.1.foo">nvidia-smi.1.foo</a> &rarr; 404
+- <a href="https://man.archlinux.org/man/nvidia-smi.1.cs">nvidia-smi.1.cs</a> &rarr;
+  <a href="https://man.archlinux.org/man/nvidia-smi.1.en">nvidia-smi.1.en</a>
+- <a href="https://man.archlinux.org/man/nvidia-smi.foo">nvidia-smi.foo</a> &rarr; 404
+- <a href="https://man.archlinux.org/man/nvidia-smi.1.foo">nvidia-smi.1.foo</a> &rarr; 404
 
 ### Package filter
 
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/nvidia-utils/nvidia-smi.en">nvidia-utils/nvidia-smi.en</a>
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/nvidia-340xx-utils/nvidia-smi.en">nvidia-340xx-utils/nvidia-smi.en</a>
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/nvidia-utils/nvidia-smi.cs">nvidia-utils/nvidia-smi.cs</a> &rarr;
-  <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/nvidia-utils/nvidia-smi.en">nvidia-utils/nvidia-smi.en</a>
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/nvidia-340xx-utils/nvidia-smi.cs">nvidia-340xx-utils/nvidia-smi.cs</a> &rarr;
-  <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/nvidia-340xx-utils/nvidia-smi.cs">nvidia-utils/nvidia-340xx-smi.en</a>
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/foo/nvidia-smi.cs">foo/nvidia-smi.cs</a> &rarr; 404
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/foo/nvidia-smi.en">foo/nvidia-smi.en</a> &rarr; 404
+- <a href="https://man.archlinux.org/man/nvidia-utils/nvidia-smi.en">nvidia-utils/nvidia-smi.en</a>
+- <a href="https://man.archlinux.org/man/nvidia-340xx-utils/nvidia-smi.en">nvidia-340xx-utils/nvidia-smi.en</a>
+- <a href="https://man.archlinux.org/man/nvidia-utils/nvidia-smi.cs">nvidia-utils/nvidia-smi.cs</a> &rarr;
+  <a href="https://man.archlinux.org/man/nvidia-utils/nvidia-smi.en">nvidia-utils/nvidia-smi.en</a>
+- <a href="https://man.archlinux.org/man/nvidia-340xx-utils/nvidia-smi.cs">nvidia-340xx-utils/nvidia-smi.cs</a> &rarr;
+  <a href="https://man.archlinux.org/man/nvidia-340xx-utils/nvidia-smi.cs">nvidia-utils/nvidia-340xx-smi.en</a>
+- <a href="https://man.archlinux.org/man/foo/nvidia-smi.cs">foo/nvidia-smi.cs</a> &rarr; 404
+- <a href="https://man.archlinux.org/man/foo/nvidia-smi.en">foo/nvidia-smi.en</a> &rarr; 404
 
 ### .so macros
 
-There is a <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/groff.1">groff(1)</a> extension for the
-<a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/man.7">man(7)</a> and
-<a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/mdoc.7">mdoc(7)</a>
+There is a <a href="https://man.archlinux.org/man/groff.1">groff(1)</a> extension for the
+<a href="https://man.archlinux.org/man/man.7">man(7)</a> and
+<a href="https://man.archlinux.org/man/mdoc.7">mdoc(7)</a>
 languages to include contents of other files using the `.so` macro. In normal
 operation where manuals are stored as files on a file system, the
-<a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/soelim.1">soelim(1)</a>
+<a href="https://man.archlinux.org/man/soelim.1">soelim(1)</a>
 pre-processor handles the inclusion. Our system is based on a database rather
 than a file system, so we need a custom `soelim` as well.
 
 Some pages which contain the `.so` macro:
 
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/[.1.zh_CN">[.1.zh_CN</a>
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/pwunconv.8">pwunconv(8)</a>
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/pam.8">pam(8)</a>
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/url.7">url(7)</a>
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/xorg.conf.d.5">xorg.conf.d(5)</a>
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/glibc.7">glibc(7)</a>
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/systemd-logind.8">systemd-logind(8)</a>
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/shorewall6.conf.5">shorewall6.conf(5)</a>
+- <a href="https://man.archlinux.org/man/[.1.zh_CN">[.1.zh_CN</a>
+- <a href="https://man.archlinux.org/man/pwunconv.8">pwunconv(8)</a>
+- <a href="https://man.archlinux.org/man/pam.8">pam(8)</a>
+- <a href="https://man.archlinux.org/man/url.7">url(7)</a>
+- <a href="https://man.archlinux.org/man/xorg.conf.d.5">xorg.conf.d(5)</a>
+- <a href="https://man.archlinux.org/man/glibc.7">glibc(7)</a>
+- <a href="https://man.archlinux.org/man/systemd-logind.8">systemd-logind(8)</a>
+- <a href="https://man.archlinux.org/man/shorewall6.conf.5">shorewall6.conf(5)</a>
   points to a page contained in a different package (`shorewall` instead of `shorewall6`)
-- <a href="https://jlk.fjfi.cvut.cz/arch/manpages/man/lsof.8">lsof(8)</a>
+- <a href="https://man.archlinux.org/man/lsof.8">lsof(8)</a>
   (not a "hardlink", includes an invalid file `./00DIALECTS`)
