@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Page not found — Arch manual pages{% endblock %}
+
+{% block content %}
+<article>
+    <h1>404 — Page not found</h1>
+    <p>
+        The manual page <em>{{ name }}</em> was not found in
+        {% if repo and pkgname %}
+            the <em>{{ repo }}/{{ pkgname }}</em>
+        {% elif pkgname %}
+            the <em>{{ pkgname }}</em>
+        {% else %}
+            any
+        {% endif %}
+        package.
+        {% if search_url %}
+            You can <a href="{{ search_url }}">search for similar manual pages</a>.
+        {% endif %}
+    </p>
+</article>
+{% endblock %}

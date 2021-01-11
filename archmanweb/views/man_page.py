@@ -5,7 +5,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 
 from ..models import ManPage, SymbolicLink, SoelimError
-from ..utils import reverse_man_url, extract_headings
+from ..utils import reverse_man_url, search_url, extract_headings
 
 def _get_package_filter(repo, pkgname):
     if repo is None and pkgname is None:
@@ -127,14 +127,14 @@ def get_symlink(repo, pkgname, man_name, man_section, lang, output_type):
         query = SymbolicLink.objects.filter(from_section__startswith=man_section, from_name=man_name, lang=lang, **_get_package_filter(repo, pkgname))
     return _get_best_match(query, "from_section")
 
-def try_redirect_or_404(repo, pkgname, man_name, man_section, lang, output_type, name_section_lang):
+def try_redirect(repo, pkgname, man_name, man_section, lang, output_type, name_section_lang):
     symlink = get_symlink(repo, pkgname, man_name, man_section, lang, output_type)
     if symlink is not None:
         # repo and pkgname are not added, the target might be in a different package
         url = reverse_man_url("", "", symlink.to_name, symlink.to_section, symlink.lang, output_type)
         return HttpResponseRedirect(url)
 
-    # Try the default language before giving 404.
+    # Try the default language before using the fallback response.
     # This is important because we don't know if the user explicitly specified
     # the language or followed a link to a localized page, which does not exist.
     #
@@ -144,18 +144,31 @@ def try_redirect_or_404(repo, pkgname, man_name, man_section, lang, output_type,
     if (parsed_name != man_name or parsed_section != man_section) and parsed_lang == "en":
         url = reverse_man_url(repo, pkgname, parsed_name, parsed_section, "en", output_type)
         return HttpResponseRedirect(url)
-    # otherwise page does not exist in en -> 404
 
-    man_page = man_name
-    if man_section:
-        man_page += "." + man_section
+def render_404(request, repo, pkgname, name_section_lang):
+    # use naive splitting for the search URL parameters
+    # (_parse_man_name_section_lang leaves everything in the first part when
+    # the page does not exist. This is ambiguous since the section and lang
+    # may get mixed up, but better than nothing.)
+    parts = name_section_lang.rsplit(".", maxsplit=2)
+    search_name = parts[0]
+    search_section = None
+    search_lang = None
+    if len(parts) > 1:
+        search_section = parts[1]
+    if len(parts) > 2:
+        search_lang = parts[2]
 
-    if repo and pkgname:
-        raise Http404("No manual entry for {} found in package {}/{}.".format(man_page, repo, pkgname))
-    elif pkgname:
-        raise Http404("No manual entry for {} found in package {}.".format(man_page, pkgname))
-    else:
-        raise Http404("No manual entry for {} found in any package.".format(man_page))
+    context = {
+        "repo": repo,
+        "pkgname": pkgname,
+        "name": name_section_lang,
+        "search_url": search_url(search_name, section=search_section, lang=search_lang, repo=repo, pkgname=pkgname),
+    }
+
+    response = render(request, "man_404.html", context)
+    response.status_code = 404
+    return response
 
 def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_output_type=None):
     # validate input parameters
@@ -178,7 +191,13 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
     db_man = _get_best_match(query)
 
     if db_man is None:
-        return try_redirect_or_404(repo, pkgname, man_name, man_section, lang, url_output_type, name_section_lang)
+        response = try_redirect(repo, pkgname, man_name, man_section, lang, url_output_type, name_section_lang)
+        if response:
+            return response
+        # page does not exist even in the default language, return a nice 404 page with
+        # a link to the search form
+        return render_404(request, repo, pkgname, name_section_lang)
+
     if man_section != db_man.section:
         # try a symlink and check if its section is a better match than the man section
         # (e.g. mailx.1 is a symlink to mail.1, which takes precedence over mailx.1p)
