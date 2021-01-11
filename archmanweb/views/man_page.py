@@ -168,7 +168,7 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
     lang = url_lang or "en"
     serve_output_type = url_output_type or "html"
     if serve_output_type not in {"html", "txt", "raw"}:
-        return HttpResponse("Serving of {} content type is not implemented yet.".format(serve_output_type), status=501)
+        return HttpResponse("No data for the {} content type are available.".format(serve_output_type), status=400)
 
     # find the man page and package containing it
     if man_section is None:
