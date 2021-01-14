@@ -145,6 +145,24 @@ def try_redirect(repo, pkgname, man_name, man_section, lang, output_type, name_s
         url = reverse_man_url(repo, pkgname, parsed_name, parsed_section, "en", output_type)
         return HttpResponseRedirect(url)
 
+# this is used from the search view to redirect directly to the man page
+def quick_search(name_section_lang, *, repo=None, pkgname=None):
+    man_name, man_section, url_lang = _parse_man_name_section_lang(name_section_lang)
+    lang = url_lang or "en"
+
+    # find the man page and package containing it
+    if man_section is None:
+        query = ManPage.objects.filter(name=man_name, lang=lang, **_get_package_filter(repo, pkgname))
+    else:
+        query = ManPage.objects.filter(section__startswith=man_section, name=man_name, lang=lang, **_get_package_filter(repo, pkgname))
+    db_man = _get_best_match(query)
+
+    if db_man is None:
+        return try_redirect(repo, pkgname, man_name, man_section, lang, "", name_section_lang)
+    else:
+        url = reverse_man_url(repo, pkgname, man_name, man_section, url_lang, "")
+        return HttpResponseRedirect(url)
+
 def render_404(request, repo, pkgname, name_section_lang):
     # use naive splitting for the search URL parameters
     # (_parse_man_name_section_lang leaves everything in the first part when

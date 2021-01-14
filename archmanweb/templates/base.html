@@ -22,7 +22,7 @@
                         {% if search_form is None %}
                         <form action="{% url 'search' %}" class="search" role="search">
                             <input type="search" placeholder="Search manual page" name="q" value="{% block current_search_term %}{% endblock %}" />
-                            <input type="submit" value="Go" />
+                            <input type="submit" name="go" value="Go" />
                         </form>
                         {% endif %}
                         <li id="anb-home"><a href="https://archlinux.org/" title="Arch news, packages, projects and more">Home</a></li>
