@@ -2,10 +2,6 @@
  * Basic style
  */
 
-.man-page-content {
-    max-width: 80ch;
-}
-
 .man-page-content div.manual-text {
     text-align: justify;
     margin-left: 5ex;
@@ -95,7 +91,8 @@
 /* Arch-styled tables
  * style copied from base.css and changed:
  * - applied to the "tbl" class
- * - removed "white-space: nowrap"
+ * - removed "white-space: nowrap", set word-break to force shrinking on small
+ *   screens
  * - "th" style applied also to "td" in the first row
  * - top and bottom margins set to 1em for consistency with other markup elements
  *   (they have to be the same because mandoc creates elements with text of the
@@ -115,6 +112,7 @@
 .man-page-content table.tbl th {
     padding: 0.35em 0.90em;
     text-align: left;
+    word-break: break-word;
 }
 
 .man-page-content table.tbl th,
@@ -122,6 +120,7 @@
     background: rgb(217, 230, 236) none repeat scroll 0 0;
     border-bottom: 1px solid #bcd;
     font-weight: bold;
+    word-break: initial;
 }
 
 .man-page-content table.tbl tr:hover {
