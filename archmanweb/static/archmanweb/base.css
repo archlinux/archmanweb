@@ -4,6 +4,11 @@
     line-height: 14px !important;
     padding: 14px 15px 0px !important;
 }
+#archnavbar input {
+    border: none;
+    height: 17px;
+    line-height: 14px !important;
+}
 
 /* simple reset */
 * {
