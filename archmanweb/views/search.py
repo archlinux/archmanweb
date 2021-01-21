@@ -10,6 +10,7 @@ from django.contrib.postgres.search import TrigramSimilarity, SearchQuery, Searc
 
 from ..models import Package, Content, ManPage, SymbolicLink
 from ..utils import paginate
+from .man_page import quick_search
 
 class SearchForm(forms.Form):
     error_css_class = "form-error"
@@ -24,6 +25,9 @@ class SearchForm(forms.Form):
                     help_text="Limit results to a specific package name",
                     required=False
                 )
+
+    # hidden field for quick search
+    go = forms.CharField(widget=forms.HiddenInput(), required=False)
 
     def __init__(self, querydict, *args, **kwargs):
         super().__init__(querydict, *args, **kwargs)
@@ -126,6 +130,20 @@ def search(request):
     filter_lang = search_form.cleaned_data["lang"]
     filter_repo = search_form.cleaned_data["repo"]
     filter_pkgname = search_form.cleaned_data["pkgname"]
+
+    # handle quick search
+    go = search_form.cleaned_data["go"]
+    if term and go == "Go" and len(filter_repo) <= 1:
+        name_section_lang = term
+        if filter_section:
+            name_section_lang += filter_section
+        if filter_lang:
+            name_section_lang += filter_lang
+        response = quick_search(repo=filter_repo[0] if len(filter_repo) == 1 else None,
+                                pkgname=filter_pkgname or None,
+                                name_section_lang=name_section_lang)
+        if response:
+            return response
 
     man_filter = Q()
     pkg_filter = Q()
@@ -301,4 +319,3 @@ def search(request):
     }
 
     return render(request, "search.html", context)
-

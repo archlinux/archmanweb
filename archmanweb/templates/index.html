@@ -1,45 +1,71 @@
 {% extends "base.html" %}
+{% load static %}
 {% load make_table %}
 
+{% block head %}
+    <link rel="stylesheet" type="text/css" href="{% static 'archmanweb/man_page.css' %}">
+{% endblock %}
+
 {% block content %}
-<article>
+<article id="content-left">
+<section class="man-page-content">
 
-<p>
-This website is a repository of all manual pages available in the <a htref="https://www.archlinux.org/packages/">Arch Linux packages</a>.
-The project was initially created <a href="https://gitlab.archlinux.org/archlinux/archmanweb/-/tree/master#about">for the man template on the Arch wiki</a>.
-The code is developed in a <a href="https://gitlab.archlinux.org/archlinux/archmanweb">GitLab repository</a>.
-</p>
+<table class="head">
+  <tbody><tr>
+    <td class="head-ltitle">man.archlinux.org(7)</td>
+    <td class="head-vol">Arch Linux manual pages</td>
+    <td class="head-rtitle">man.archlinux.org(7)</td>
+  </tr>
+</tbody></table>
+<div class="manual-text">
 
-<p>
-There are {{ count_man_pages }} manual pages and {{ count_symlinks }} symbolic links from
-{{ count_pkgs_with_mans }} packages, another {{ count_pkgs_without_mans }} packages do not contain
-any indexable manual pages.
-</p>
+<section class="Sh">
+    <h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+    man.archlinux.org — manual pages from Arch Linux packages
+</section>
 
-<p>
-Traditionally, manual pages are organized into several <em>sections</em>. Read the introduction
-pages for each section:
-<a href="{% url 'index' %}man/intro.1">intro(1)</a>,
-<a href="{% url 'index' %}man/intro.2">intro(2)</a>,
-<a href="{% url 'index' %}man/intro.3">intro(3)</a>,
-<a href="{% url 'index' %}man/intro.4">intro(4)</a>,
-<a href="{% url 'index' %}man/intro.5">intro(5)</a>,
-<a href="{% url 'index' %}man/intro.6">intro(6)</a>,
-<a href="{% url 'index' %}man/intro.7">intro(7)</a>,
-<a href="{% url 'index' %}man/intro.8">intro(8)</a>.
-Some packages provide their manuals in a subsection (e.g. 3ssl) and some use non-standard sections
-(e.g. 0 or n).
-</p>
+<section class="Sh">
+    <h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+    <p class="Pp HP"><b>!archman</b> KEYWORDS...</p>
+</section>
 
-<p>
-There are several ways to find a specific manual page:
-<ul>
-    <li>Use the <a href="{% url 'search' %}">search form</a> to search for keywords in the names and
-        descriptions of manual pages and packages.</li>
-    <li>Use the <a href="{% url 'listing' %}">listing form</a> to list all manual pages matching the
-        specified filtering and sorting criteria.</li>
-    <li>Manually use the addressing scheme as explained below.</li>
-</ul>
+<section class="Sh">
+    <h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+    <p>
+    This website is a repository of all manual pages available in the
+    <a htref="https://www.archlinux.org/packages/">Arch Linux packages</a>.
+    There are {{ count_man_pages }} manual pages and {{ count_symlinks }} symbolic links from
+    {{ count_pkgs_with_mans }} packages, another {{ count_pkgs_without_mans }} packages do not contain
+    any indexable manual pages.
+    </p>
+
+    <p>
+    Traditionally, manual pages are organized into several <em>sections</em>. Read the introduction
+    pages for each section:
+    <a href="{% url 'index' %}man/intro.1">intro(1)</a>,
+    <a href="{% url 'index' %}man/intro.2">intro(2)</a>,
+    <a href="{% url 'index' %}man/intro.3">intro(3)</a>,
+    <a href="{% url 'index' %}man/intro.4">intro(4)</a>,
+    <a href="{% url 'index' %}man/intro.5">intro(5)</a>,
+    <a href="{% url 'index' %}man/intro.6">intro(6)</a>,
+    <a href="{% url 'index' %}man/intro.7">intro(7)</a>,
+    <a href="{% url 'index' %}man/intro.8">intro(8)</a>.
+    Some packages provide their manuals in a subsection (e.g. 3ssl) and some use non-standard sections
+    (e.g. 0 or n).
+    </p>
+</section>
+
+<section class="Sh">
+    <h1 class="Sh" id="USAGE"><a class="permalink" href="#USAGE">USAGE</a></h1>
+    There are several ways to find a specific manual page:
+    <ul>
+        <li>Use the <a href="{% url 'search' %}">search form</a> to search for keywords in the names and
+            descriptions of manual pages and packages. You can also the <code>!archman</code> DuckDuckGo
+            <a href="https://duckduckgo.com/bang">bang</a> to search Arch manual pages.</li>
+        <li>Use the <a href="{% url 'listing' %}">listing form</a> to list all manual pages matching the
+            specified filtering and sorting criteria.</li>
+        <li>Manually use the addressing scheme as explained below.</li>
+    </ul>
 
 <p>
 The manual pages are addressable as
@@ -62,11 +88,41 @@ Note that symbolic links, such as <a href="{% url 'index' %}man/bunzip2.1">bunzi
 implemented as HTTP redirects with the 302 status code. Symbolic links are included in per-package
 listings, such as <a href="{% url 'listing' %}/core/openssl/">core/openssl</a>.
 </p>
+</section>
 
-<section>
-    <h2>Last updates</h2>
+<section class="Sh">
+    <h1 class="Sh" id="LAST_UPDATES"><a class="permalink" href="#LAST_UPDATES">LAST UPDATES</a></h1>
+    This is just a brief summary of the last updates to the internal database.
     {% make_table last_updates class_="styled-table" %}
 </section>
 
+<section class="Sh">
+    <h1 class="Sh" id="NOTES"><a class="permalink" href="#NOTES">NOTES</a></h1>
+    This page is <em>not</em> an actual manual page. It was just made to look like one.
+</section>
+
+<section class="Sh">
+    <h1 class="Sh" id="AUTHORS"><a class="permalink" href="#AUTHORS">AUTHORS</a></h1>
+    The project was initially created <a href="https://gitlab.archlinux.org/archlinux/archmanweb/-/tree/master#about">for the man template on the Arch wiki</a>.
+    The code is developed in a <a href="https://gitlab.archlinux.org/archlinux/archmanweb">GitLab repository</a>.
+</section>
+
+<section class="Sh">
+    <h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE ALSO</a></h1>
+    There are other manual page websites using different sources and providing different features.
+    See a <a href="https://wiki.archlinux.org/index.php/Man_page#Online_man_pages">list on the
+    wiki</a>.
+</section>
+
+</div>
+
+<table class="foot">
+  <tbody><tr>
+    <td class="foot-date">{% now "Y-m-d" %}</td>
+    <td class="foot-os">Arch Linux</td>
+  </tr>
+</tbody></table>
+
+</section>
 </article>
 {% endblock %}

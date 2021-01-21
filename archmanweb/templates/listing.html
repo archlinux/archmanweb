@@ -20,6 +20,7 @@
             {# fieldset cannot be a flex container: https://stackoverflow.com/q/28078681 #}
             <div class="flex-container">
             {% for field in listing_form %}
+            {% if not field.is_hidden %}
             <div>
                 <label for="{{ field.id_for_label }}" title="{{ field.help_text }}">
                     {{ field.label }}
@@ -27,6 +28,7 @@
                 {{ field }}
                 {{ field.errors }}
             </div>
+            {% endif %}
             {% endfor %}
             <div>
                 <label>&nbsp;</label>

@@ -4,6 +4,11 @@
     line-height: 14px !important;
     padding: 14px 15px 0px !important;
 }
+#archnavbar input {
+    border: none;
+    height: 17px;
+    line-height: 14px !important;
+}
 
 /* simple reset */
 * {
@@ -17,6 +22,9 @@ body {
 /*    background: #f6f9fc; */
     color: #222;
     font: normal 100% sans-serif;
+    /* set min-width to prevent over-shrinking of the body when
+     * a flex-container child refuses to shrink */
+    min-width: min-content;
 }
 
 p {
@@ -189,28 +197,42 @@ h5 {
 main#content {
     display: flex;
     margin: 1em;
+    justify-content: center;
 }
 
 #content-left {
     display: block;
     order: 1;
-    /* max-width of .man-page-content has to be specified here to make it play
-     * nice with flex */
+    /* max-width of the content has to be specified here to make it play nice
+     * with flex. Setting it to max-content would prevent growing beyond the
+     * largest child element. */
     max-width: 80ch;
     /* set min-width to prevent excessive shrinking
      * (and to force shrinking in case there is an element which refuses to
      * shrink, e.g. a very long line in a <pre> tag) */
     min-width: 40ch;
-    /* shrinks to 0 to apply 70% width */
-    flex-shrink: 0;
-    /* sets initial width to 70% */
+    /* set initial/ideal width to 70% */
     flex-basis: 70%;
+    /* shrink factor of 0 effectively means that it will not shrink below 70% of
+     * the available space (the sidebar will be shrinked instead) */
+    flex-shrink: 0;
+    /* increase grow factor to expand into the extra space at the cost of the
+     * sidebar */
+    flex-grow: 1;
 }
 
 #sidebar {
     display: block;
     order: 2;
     margin-left: 2em;
+    /* set min-width to prevent excessive shrinking
+     * (and to force shrinking in case there is an element which refuses to
+     * shrink, e.g. a very long word) */
+    min-width: 20ch;
+    /* set max-width to prevent excessive growing */
+    max-width: 40ch;
+    /* sets flex base width to 30% (complement of the main content's base) */
+    flex-basis: 30%;
 }
 #sidebar > * {
     margin-bottom: 1em;
@@ -290,7 +312,7 @@ table.styled-table tr td,
 table.styled-table th {
     padding: 0.35em 0.90em;
     text-align: left;
-    white-space: nowrap;
+    /*white-space: nowrap;*/
 }
 
 table.styled-table th {
