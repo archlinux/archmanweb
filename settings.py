@@ -17,6 +17,8 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     # https://docs.djangoproject.com/en/3.1/ref/csrf/
     "django.middleware.csrf.CsrfViewMiddleware",
+    # https://docs.djangoproject.com/en/3.1/ref/clickjacking/
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
 # Base of the URL hierarchy
