@@ -21,6 +21,8 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     # https://docs.djangoproject.com/en/3.1/ref/middleware/#django.middleware.security.SecurityMiddleware
     "django.middleware.security.SecurityMiddleware",
+    # https://django-csp.readthedocs.io/en/latest/
+    "csp.middleware.CSPMiddleware",
 ]
 
 # Referrer Policy
@@ -28,6 +30,14 @@ SECURE_REFERRER_POLICY = 'no-referrer-when-downgrade'
 
 # X-XSS-Protection, enables cross-site scripting filter in most browsers
 SECURE_BROWSER_XSS_FILTER = True
+
+# CSP Settings
+CSP_DEFAULT_SRC = ("'self'",)
+CSP_SCRIPT_SRC = ("'none'",)
+CSP_IMG_SRC = ("'self'",)
+CSP_BASE_URI = ("'none'",)
+CSP_FORM_ACTION = ("'self'",)
+CSP_FRAME_ANCESTORS = ("'none'",)
 
 # Base of the URL hierarchy
 ROOT_URLCONF = "urls"
