@@ -1,8 +1,18 @@
 # Arch manual pages
 
+## Git submodules
+
+Make sure that git submodules are initialized after cloning the repository:
+
+    git submodule update --init --recursive
+
+Or initialize the submodules while cloning:
+
+    git clone --recurse-submodules ssh://git@gitlab.archlinux.org:222/archlinux/archmanweb.git
+
 ## Dependencies
 
-	pacman -S pyalpm python-chardet python-django python-django-csp python-psycopg2 python-requests python-xtarfile
+    pacman -S pyalpm python-chardet python-django python-django-csp python-psycopg2 python-requests python-xtarfile
 
 ## Installation
 
@@ -26,12 +36,21 @@
 
         ./manage.py migrate
 
-6. Start the development web server with `./manage.py runserver`. The site
+6. Build the [archlinux-common-style](https://gitlab.archlinux.org/archlinux/archlinux-common-style)
+   submodule.
+
+   A SASS compiler is needed. For example, install [sassc](https://archlinux.org/packages/community/x86_64/sassc/)
+   and run
+
+        cd archlinux-common-style
+        make SASS=sassc
+
+7. Start the development web server with `./manage.py runserver`. The site
    should be available at http://localhost:8000, saying that there are 0 man
    pages and 0 packages (because they were not imported yet). The server will
    automatically reload when you make changes to the webapp code or templates.
 
-7. Run the `update.py` script to import some man pages. However, note that the
+8. Run the `update.py` script to import some man pages. However, note that the
    full import requires to download about 7.5 GiB of packages from a mirror of
    the Arch repos and then the extraction takes about 20-30 minutes. (The volume
    of all man pages is less than 300 MiB though.) If you won't need all man pages
