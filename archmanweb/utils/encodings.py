@@ -1,7 +1,7 @@
 import re
 import unicodedata
 
-__all__ = ["normalize_html_entities", "anchorencode"]
+__all__ = ["normalize_html_entities", "safe_escape_attribute", "anchorencode_id", "anchorencode_href"]
 
 def normalize_html_entities(s):
     def repl(match):
@@ -10,6 +10,18 @@ def normalize_html_entities(s):
             return chr(int(match.group(2), 16))
         return chr(int(match.group(2)))
     return re.sub(r"&#(x?)([0-9a-fA-F]+);", repl, s)
+
+# escape sensitive characters when formatting an element attribute
+# https://stackoverflow.com/a/7382028
+def safe_escape_attribute(attribute):
+    escape_map = {
+        "<"  : "&lt;",
+        ">"  : "&gt;",
+        "\"" : "&quot;",
+        "'"  : "&apos;",
+        "&"  : "&amp;",
+    }
+    return "".join(escape_map.get(c, c) for c in attribute)
 
 # function copied from wiki-scripts:
 # https://github.com/lahwaacz/wiki-scripts/blob/master/ws/parser_helpers/encodings.py#L81-L98
@@ -32,37 +44,45 @@ def _anchor_preprocess(str_):
     str_ = str_.lstrip(":")
     return str_
 
-# function copied from wiki-scripts (and the "legacy" format was removed):
+# adapted from `anchorencode` in wiki-scripts (the "legacy" format was removed):
 # https://github.com/lahwaacz/wiki-scripts/blob/master/ws/parser_helpers/encodings.py#L119-L152
-def anchorencode(str_):
+def anchorencode_id(str_):
     """
-    Function corresponding to the ``{{anchorencode:}}`` `magic word`_.
-
-    Note that the algorithm corresponds to the ``"html5"`` MediaWiki mode,
-    see `$wgFragmentMode`_.
-
-    :param str_: the string to be encoded
-
-    .. _`magic word`: https://www.mediawiki.org/wiki/Help:Magic_words
-    .. _`$wgFragmentMode`: https://www.mediawiki.org/wiki/Manual:$wgFragmentMode
+    anchorencode_id avoids percent-encoding to keep the id readable
     """
     str_ = _anchor_preprocess(str_)
-    special_map = {" ": "_"}
-    escape_char = "."
+    # HTML5 specification says ids must not contain spaces
+    str_ = re.sub("[ \t\n\r\f\v]", "_", str_)
+    return str_
+
+# adapted from `anchorencode` in wiki-scripts (the "legacy" format was removed):
+# https://github.com/lahwaacz/wiki-scripts/blob/master/ws/parser_helpers/encodings.py#L119-L152
+def anchorencode_href(str_, *, input_is_already_id=False):
+    """
+    anchorencode_href does some percent-encoding on top of anchorencode_id to
+    increase compatibility (The id can be linked with "#id" as well as with
+    "#percent-encoded-id", since the browser does the percent-encoding in the
+    former case. But if we used percent-encoded ids in the first place, only
+    the links with percent-encoded fragments would work.)
+    """
+    if input_is_already_id is False:
+        str_ = anchorencode_id(str_)
+    # encode "%" from percent-encoded octets
+    str_ = re.sub(r"%([a-fA-F0-9]{2})", r"%25\g<1>", str_)
+    # encode sensitive characters - the output of this function should be usable
+    # in various markup languages (MediaWiki, FluxBB, etc.)
+    encode_chars = "[]|"
+
+    escape_char = "%"
     charset = "utf-8"
     errors = "strict"
-    # below is the code from the encode function, but without the encode_chars
-    # and skip_chars parameters, and adjusted for unicode categories
     output = ""
     for char in str_:
-        # encode only characters from the Separator and Other categories
+        # encode characters from encode_chars and the Separator and Other categories
         # https://en.wikipedia.org/wiki/Unicode#General_Category_property
-        if unicodedata.category(char)[0] in {"Z", "C"}:
-            if special_map is not None and char in special_map:
-                output += special_map[char]
-            else:
-                for byte in bytes(char, charset, errors):
-                    output += "{}{:02X}".format(escape_char, byte)
+        if char in encode_chars or unicodedata.category(char)[0] in {"Z", "C"}:
+            for byte in bytes(char, charset, errors):
+                output += "{}{:02X}".format(escape_char, byte)
         else:
             output += char
     return output
