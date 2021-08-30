@@ -4,7 +4,7 @@ import textwrap
 
 from django.urls import reverse
 from .django import reverse_man_url
-from .encodings import normalize_html_entities, anchorencode
+from .encodings import normalize_html_entities, safe_escape_attribute, anchorencode_id, anchorencode_href
 
 __all__ = ["mandoc_convert", "postprocess", "extract_headings", "extract_description"]
 
@@ -50,7 +50,7 @@ def _replace_section_heading_ids(html):
     # section ID getter capable of handling duplicate titles
     ids = set()
     def get_id(title):
-        base_id = anchorencode(title)
+        base_id = anchorencode_id(title)
         id = base_id
         j = 2
         while id in ids:
@@ -64,8 +64,9 @@ def _replace_section_heading_ids(html):
         heading_attributes = match.group("heading_attributes")
         heading_attributes = " ".join(a for a in heading_attributes.split() if not a.startswith("id="))
         title = match.group("title").replace("\n", " ")
-        id = get_id(title)
-        return f"<{heading_tag} {heading_attributes} id='{id}'><a class='permalink' href='#{id}'>{title}</a></{heading_tag}>"
+        id = safe_escape_attribute(get_id(title))
+        href = anchorencode_href(id, input_is_already_id=True)
+        return f"<{heading_tag} {heading_attributes} id='{id}'><a class='permalink' href='#{href}'>{title}</a></{heading_tag}>"
 
     pattern = re.compile(r"\<(?P<heading_tag>h[1-6])(?P<heading_attributes>[^\>]*)\>[^\<\>]*"
                          r"\<a class=(\"|\')permalink(\"|\')[^\>]*\>"
