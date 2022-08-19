@@ -153,8 +153,10 @@ def search(request):
         section_parts = []
         for q in filter_section:
             # do prefix search only when given a single letter (e.g. "3p" should not match "3perl", "3python" etc.)
+            # Note: section is matched case-insensitively due to
+            # https://gitlab.archlinux.org/archlinux/archmanweb/-/issues/35
             if len(q) == 1:
-                section_parts.append(Q(section__startswith=q))
+                section_parts.append(Q(section__istartswith=q))
             else:
                 section_parts.append(Q(section__iexact=q))
         man_filter &= reduce(operator.__or__, section_parts)

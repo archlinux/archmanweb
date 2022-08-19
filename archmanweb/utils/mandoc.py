@@ -82,7 +82,7 @@ def postprocess(text, content_type, lang):
         xref_pattern = re.compile(r"\<(?P<tag>b|i|strong|em|mark)\>"
                                   r"(?P<man_name>[A-Za-z0-9@._+\-:\[\]]+)"
                                   r"\<\/\1\>"
-                                  r"\((?P<section>\d[a-z]{,3})\)")
+                                  r"\((?P<section>\d[A-Za-z]{,3})\)")
         text = xref_pattern.sub("<a href='" + reverse("index") + "man/" + r"\g<man_name>.\g<section>." + lang +
                                         "'>\g<man_name>(\g<section>)</a>",
                                 text)
