@@ -19,8 +19,10 @@ def _get_package_filter(repo, pkgname):
 # but this seems enough to parse the URL correctly. debiman actually only checks
 # if given section/lang is in some static set.
 def _exists_name_section(name, section):
-    return ManPage.objects.filter(name=name, section__startswith=section).exists() or \
-           SymbolicLink.objects.filter(from_name=name, from_section__startswith=section).exists()
+    # Note: section is matched case-insensitively due to
+    # https://gitlab.archlinux.org/archlinux/archmanweb/-/issues/35
+    return ManPage.objects.filter(name=name, section__istartswith=section).exists() or \
+           SymbolicLink.objects.filter(from_name=name, from_section__istartswith=section).exists()
 
 def _exists_language(lang):
     # cross-language symlinks are not allowed
@@ -31,8 +33,10 @@ def _exists_name_language(name, lang):
     return ManPage.objects.filter(name=name, lang=lang).exists()
 
 def _exists_name_section_language(name, section, lang):
-    return ManPage.objects.filter(name=name, section__startswith=section, lang=lang).exists() or \
-           SymbolicLink.objects.filter(from_name=name, from_section__startswith=section, lang=lang).exists()
+    # Note: section is matched case-insensitively due to
+    # https://gitlab.archlinux.org/archlinux/archmanweb/-/issues/35
+    return ManPage.objects.filter(name=name, section__istartswith=section, lang=lang).exists() or \
+           SymbolicLink.objects.filter(from_name=name, from_section__istartswith=section, lang=lang).exists()
 
 def _parse_man_name_section_lang(url_snippet, *, force_lang=None):
     # Man page names can contain dots, so we need to parse from the right. There are still
@@ -124,7 +128,9 @@ def get_symlink(repo, pkgname, man_name, man_section, lang, output_type):
     if man_section is None:
         query = SymbolicLink.objects.filter(from_name=man_name, lang=lang, **_get_package_filter(repo, pkgname))
     else:
-        query = SymbolicLink.objects.filter(from_section__startswith=man_section, from_name=man_name, lang=lang, **_get_package_filter(repo, pkgname))
+        # Note: section is matched case-insensitively due to
+        # https://gitlab.archlinux.org/archlinux/archmanweb/-/issues/35
+        query = SymbolicLink.objects.filter(from_section__istartswith=man_section, from_name=man_name, lang=lang, **_get_package_filter(repo, pkgname))
     return _get_best_match(query, "from_section")
 
 def try_redirect(repo, pkgname, man_name, man_section, lang, output_type, name_section_lang):
@@ -154,7 +160,9 @@ def quick_search(name_section_lang, *, repo=None, pkgname=None):
     if man_section is None:
         query = ManPage.objects.filter(name=man_name, lang=lang, **_get_package_filter(repo, pkgname))
     else:
-        query = ManPage.objects.filter(section__startswith=man_section, name=man_name, lang=lang, **_get_package_filter(repo, pkgname))
+        # Note: section is matched case-insensitively due to
+        # https://gitlab.archlinux.org/archlinux/archmanweb/-/issues/35
+        query = ManPage.objects.filter(section__istartswith=man_section, name=man_name, lang=lang, **_get_package_filter(repo, pkgname))
     db_man = _get_best_match(query)
 
     if db_man is None:
@@ -205,7 +213,9 @@ def man_page(request, *, repo=None, pkgname=None, name_section_lang=None, url_ou
     if man_section is None:
         query = ManPage.objects.filter(name=man_name, lang=lang, **_get_package_filter(repo, pkgname))
     else:
-        query = ManPage.objects.filter(section__startswith=man_section, name=man_name, lang=lang, **_get_package_filter(repo, pkgname))
+        # Note: section is matched case-insensitively due to
+        # https://gitlab.archlinux.org/archlinux/archmanweb/-/issues/35
+        query = ManPage.objects.filter(section__istartswith=man_section, name=man_name, lang=lang, **_get_package_filter(repo, pkgname))
     db_man = _get_best_match(query)
 
     if db_man is None:
