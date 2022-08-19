@@ -167,6 +167,8 @@ class ManPage(models.Model):
         # eliminate the '.so' macro
         if re.fullmatch(r"^\.so [A-Za-z0-9@._+\-:\[\]\/]+\s*$", stripped):
             path = stripped.split()[1]
+            if path.endswith('.gz'):
+                path = path[:-3]
             pp = PurePath(path)
             target_name = pp.stem
             target_section = pp.suffix[1:]  # strip the dot
