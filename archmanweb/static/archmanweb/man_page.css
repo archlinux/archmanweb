@@ -91,8 +91,7 @@
 /* Arch-styled tables
  * style copied from base.css and changed:
  * - applied to the "tbl" class
- * - removed "white-space: nowrap", set word-break to force shrinking on small
- *   screens
+ * - removed "white-space: nowrap"
  * - "th" style applied also to "td" in the first row
  * - top and bottom margins set to 1em for consistency with other markup elements
  *   (they have to be the same because mandoc creates elements with text of the
@@ -112,7 +111,6 @@
 .man-page-content table.tbl th {
     padding: 0.35em 0.90em;
     text-align: left;
-    word-break: break-word;
 }
 
 .man-page-content table.tbl th,
@@ -271,6 +269,7 @@ h2.Ss {         margin-top: 1.2em;
                 margin-left: 3.8em; }
 .Bl-tag > dt {
                 float: left;
+                width: 100%;
                 margin-top: 0em;
                 margin-left: -3.8em;
                 padding-right: 0.5em;
