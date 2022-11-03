@@ -79,13 +79,23 @@ def postprocess(text, content_type, lang):
     assert content_type in {"html", "txt"}
     if content_type == "html":
         # replace references with links
-        xref_pattern = re.compile(r"\<(?P<tag>b|i|strong|em|mark)\>"
-                                  r"(?P<man_name>[A-Za-z0-9@._+\-:\[\]]+)"
-                                  r"\<\/\1\>"
-                                  r"\((?P<section>\d[A-Za-z]{,3})\)")
-        text = xref_pattern.sub("<a href='" + reverse("index") + "man/" + r"\g<man_name>.\g<section>." + lang +
-                                        "'>\g<man_name>(\g<section>)</a>",
-                                text)
+        xref_patterns = [
+                # section outside the tag
+                r"\<(?P<tag>b|i|strong|em|mark)\>"
+                r"(?P<man_name>[A-Za-z0-9@._+\-:\[\]]+)"
+                r"\<\/\1\>"
+                r"\((?P<section>\d[A-Za-z]{,3})\)",
+                # section inside the tag
+                r"\<(?P<tag>b|i|strong|em|mark)\>"
+                r"(?P<man_name>[A-Za-z0-9@._+\-:\[\]]+)"
+                r"\((?P<section>\d[A-Za-z]{,3})\)"
+                r"\<\/\1\>",
+        ]
+        for pattern in xref_patterns:
+            text = re.sub(pattern,
+                          "<a href='" + reverse("index") + "man/" + r"\g<man_name>.\g<section>." + lang +
+                                  "'>\g<man_name>(\g<section>)</a>",
+                          text)
 
         # remove empty tags
         text = re.sub(r"\<(?P<tag>[^ >]+)[^>]*\>(\s|&nbsp;)*\</(?P=tag)\>\n?", "", text)
