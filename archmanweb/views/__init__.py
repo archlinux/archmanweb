@@ -21,5 +21,6 @@ def index(request):
         "count_pkgs_with_mans": count_pkgs_with_mans,
         "count_pkgs_without_mans": count_all_pkgs - count_pkgs_with_mans,
         "last_updates": last_updates,
+        "search_autofocus": True,
     }
     return render(request, "index.html", context)
