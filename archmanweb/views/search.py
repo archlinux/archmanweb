@@ -90,6 +90,10 @@ def build_apropos_filter(q):
         elif operation == "startswith":
             op = "~~ %s::text"
             value += "%"
+        elif operation == "istartswith":
+            op = "~~ lower(%s::text)"
+            column = f"lower({column})"
+            value += "%"
         else:
             raise NotImplementedError(f"Operation {operation} is not implemented for the apropos search.")
         # build the filter condition
