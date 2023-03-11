@@ -93,7 +93,7 @@ from the [mandoc toolset](http://mdocml.bsd.lv/) for the conversion to HTML and
 the [pyalpm](https://github.com/archlinux/pyalpm) library for data extraction
 from the Arch repositories. The code is available in the
 [archmanweb](https://gitlab.archlinux.org/archlinux/archmanweb) repository at
-GitHub.
+GitLab.
 
 Overall, this approach allows us to provide the following features without
 rebuilding the whole website from scratch:
